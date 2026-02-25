@@ -8,10 +8,17 @@ load_dotenv()
 
 CONNECTION_STRING = os.getenv('CONNECTION_STRING')
 
+# Fail fast with a helpful message if the connection string is missing
+if not CONNECTION_STRING:
+    raise RuntimeError(
+        "CONNECTION_STRING is not set. Create a .env file in server/ or set the environment variable.\n"
+        "Example: CONNECTION_STRING=postgresql+asyncpg://user:pass@localhost:54322/dbname"
+    )
+
 engine = create_async_engine(
     CONNECTION_STRING,
     connect_args={
-        "prepared_statement_cache_size": 0,   
+        "prepared_statement_cache_size": 0,
         "statement_cache_size": 0,
     },
     pool_pre_ping=True,
