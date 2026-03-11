@@ -1,12 +1,13 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi import HTTPException
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Always load server/.env no matter where the process is started from.
+_env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=_env_path)
 
 engine = None
 SessionLocal = None
@@ -18,13 +19,14 @@ def _get_session_local():
     if SessionLocal is not None:
         return SessionLocal
 
-    if not DATABASE_URL:
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
         raise HTTPException(
             status_code=500,
             detail="DATABASE_URL is not configured on the server.",
         )
 
-    engine = create_engine(DATABASE_URL, echo=True, future=True)
+    engine = create_engine(database_url, echo=True, future=True)
     SessionLocal = sessionmaker(
         bind=engine,
         autocommit=False,
