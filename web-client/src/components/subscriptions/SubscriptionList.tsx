@@ -11,7 +11,7 @@ Displays:
 */
 
 import type { Subscription } from "../../types/Subscription"
-import { getDaysLeft } from "../../types/utils/dateUtils"
+import { getDaysLeftForSubscription } from "../../types/utils/dateUtils"
 import SubscriptionForm from "./SubscriptionForm"
 
 interface Props {
@@ -31,12 +31,18 @@ export default function SubscriptionList({
   onEnableAutoRenew,
   onRenew,
 }: Props) {
-  // Returns color class based on how close the billing date is
-    const getBadgeColor = (days: number) => {
-  if (days <= 2) return "bg-red-100 text-red-700"
-  if (days <= 7) return "bg-yellow-100 text-yellow-700"
-  return "bg-emerald-100 text-emerald-700"
-}
+  const formatRenewalLabel = (sub: Subscription, daysLeft: number) => {
+    if (daysLeft <= 0) {
+      return sub.autoRenew ? "Renews today" : "Expires today"
+    }
+
+    return sub.autoRenew ? `Renews in ${daysLeft} days` : `Expires in ${daysLeft} days`
+  }
+
+  const getRenewalBadgeColor = (sub: Subscription) => {
+    return sub.autoRenew ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700"
+  }
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -67,7 +73,7 @@ export default function SubscriptionList({
         // Renders each subscription with name, cost, billing date, days left badge, and delete button
         <div className="space-y-4">
           {activeSubscriptions.map((sub) => {
-            const daysLeft = getDaysLeft(sub.billingDate)
+            const daysLeft = getDaysLeftForSubscription(sub) ?? 0
 
             return (
               <div
@@ -85,17 +91,9 @@ export default function SubscriptionList({
 
                 <div className="flex items-center gap-4">
                   <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                      sub.autoRenew ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {sub.autoRenew ? "Auto Renew" : "Canceled"}
-                  </span>
-
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full ${getBadgeColor(daysLeft)}`}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full ${getRenewalBadgeColor(sub)}`}
                     >
-                    {daysLeft} days left
+                    {formatRenewalLabel(sub, daysLeft)}
                     </span>
 
                   {sub.autoRenew ? (

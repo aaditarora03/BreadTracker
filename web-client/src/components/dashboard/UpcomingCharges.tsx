@@ -1,16 +1,18 @@
 import type { Subscription } from "../../types/Subscription"
-import { getDaysLeft } from "../../types/utils/dateUtils"
+import { getDaysLeftFromDate, getNextBillingDateForSubscription } from "../../types/utils/dateUtils"
 
 interface Props {
   subscriptions: Subscription[]
 }
 
 export default function UpcomingCharges({ subscriptions }: Props) {
-  const sorted = [...subscriptions].sort(
-    (a, b) =>
-      new Date(a.billingDate).getTime() -
-      new Date(b.billingDate).getTime()
-  )
+  const sorted = subscriptions
+    .map((sub) => ({
+      sub,
+      nextBillingDate: getNextBillingDateForSubscription(sub),
+    }))
+    .filter((item): item is { sub: Subscription; nextBillingDate: Date } => item.nextBillingDate !== null)
+    .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime())
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -21,8 +23,9 @@ export default function UpcomingCharges({ subscriptions }: Props) {
       </div>
 
       <div className="space-y-4">
-        {sorted.slice(0, 4).map((sub) => {
-          const daysLeft = getDaysLeft(sub.billingDate)
+        {sorted.slice(0, 4).map(({ sub, nextBillingDate }) => {
+          const daysLeft = getDaysLeftFromDate(nextBillingDate)
+          const dueText = daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} days`
 
           return (
             <div
@@ -34,7 +37,7 @@ export default function UpcomingCharges({ subscriptions }: Props) {
                   {sub.serviceName}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Due in {daysLeft} days
+                  {dueText}
                 </p>
               </div>
 

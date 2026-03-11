@@ -49,6 +49,7 @@ interface CreateSubscriptionPayload {
   cost: number
   billingDate: string
   recurrenceType: "weekly" | "monthly" | "yearly"
+  autoRenew: boolean
 }
 
 interface UpdateSubscriptionPayload {

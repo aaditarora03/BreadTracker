@@ -22,6 +22,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
   const [cost, setCost] = useState("")
   const [billingDate, setBillingDate] = useState("")
   const [recurrenceType, setRecurrenceType] = useState<"weekly" | "monthly" | "yearly">("monthly")
+  const [autoRenew, setAutoRenew] = useState(true)
 
     // Handles form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +35,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
       cost: parseFloat(cost),
       billingDate,
       recurrenceType,
-      autoRenew: true,
+      autoRenew,
       isActive: true,
     }
 
@@ -45,6 +46,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
     setCost("")
     setBillingDate("")
     setRecurrenceType("monthly")
+    setAutoRenew(true)
   }
 
   return (
@@ -92,9 +94,19 @@ export default function SubscriptionForm({ onAdd }: Props) {
         </select>
       </div>
 
+      <label className="mt-4 flex items-center gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={autoRenew}
+          onChange={(e) => setAutoRenew(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+        />
+        Auto renew
+      </label>
+
       <button
         type="submit"
-        className="mt-4 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition"
+        className="mt-5 inline-block bg-primary text-white px-3 py-1.5 rounded-lg text-sm hover:bg-primary-dark transition"
       >
         Add Subscription
       </button>
