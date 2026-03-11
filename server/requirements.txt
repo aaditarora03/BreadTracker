@@ -9,3 +9,6 @@ sqlmodel
 alembic
 psycopg2-binary
 
+pytest
+httpx
+pytest-cov
