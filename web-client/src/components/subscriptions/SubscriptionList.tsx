@@ -11,7 +11,7 @@ Displays:
 */
 
 import type { Subscription } from "../../types/Subscription"
-import { getDaysLeftForSubscription } from "../../types/utils/dateUtils"
+import { getDaysLeftForSubscription, getNextBillingDateForSubscription } from "../../types/utils/dateUtils"
 import SubscriptionForm from "./SubscriptionForm"
 
 interface Props {
@@ -31,7 +31,41 @@ export default function SubscriptionList({
   onEnableAutoRenew,
   onRenew,
 }: Props) {
+  const parseDateOnly = (dateString: string) => {
+    const [yearText, monthText, dayText] = dateString.split("-")
+    const year = Number(yearText)
+    const month = Number(monthText)
+    const day = Number(dayText)
+
+    if (
+      Number.isInteger(year)
+      && Number.isInteger(month)
+      && Number.isInteger(day)
+      && month >= 1
+      && month <= 12
+      && day >= 1
+      && day <= 31
+    ) {
+      return new Date(year, month - 1, day)
+    }
+
+    return new Date(dateString)
+  }
+
+  const startOfDay = (value: Date) => {
+    const date = new Date(value)
+    date.setHours(0, 0, 0, 0)
+    return date
+  }
+
   const formatRenewalLabel = (sub: Subscription, daysLeft: number) => {
+    const today = startOfDay(new Date())
+    const billingDate = startOfDay(parseDateOnly(sub.billingDate))
+
+    if (billingDate > today) {
+      return daysLeft <= 0 ? "Starting today" : `Starting in ${daysLeft} days`
+    }
+
     if (daysLeft <= 0) {
       return sub.autoRenew ? "Renews today" : "Expires today"
     }
@@ -47,9 +81,11 @@ export default function SubscriptionList({
   today.setHours(0, 0, 0, 0)
 
   const isPastSubscription = (sub: Subscription) => {
-    const billingDate = new Date(sub.billingDate)
-    billingDate.setHours(0, 0, 0, 0)
-    return !sub.autoRenew && billingDate < today
+    if (sub.autoRenew) {
+      return false
+    }
+
+    return getNextBillingDateForSubscription(sub, today) === null
   }
 
   const activeSubscriptions = subscriptions.filter((sub) => !isPastSubscription(sub))
@@ -59,13 +95,13 @@ export default function SubscriptionList({
     <div>
       <SubscriptionForm onAdd={onAdd} />
     
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-3xl">
-      <h2 className="text-xl font-semibold mb-6 text-gray-900">
+    <div className="rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.8)] backdrop-blur-md shadow-[0_14px_35px_rgba(5,0,15,0.45)] p-6 max-w-3xl">
+      <h2 className="text-xl font-semibold mb-6 text-violet-50">
         Subscriptions
       </h2>
 
       {activeSubscriptions.length === 0 ? (
-        <p className="text-gray-500 text-sm">
+        <p className="text-violet-200/80 text-sm">
           No subscriptions added yet.
         </p>
       ) : (
@@ -78,13 +114,13 @@ export default function SubscriptionList({
             return (
               <div
                 key={sub.subscriptionId}
-                className="flex justify-between items-center p-4 border rounded-xl bg-gray-50"
+                className="flex justify-between items-center p-4 border border-violet-300/20 rounded-xl bg-white/10"
               >
                 <div>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-violet-50">
                     {sub.serviceName}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-violet-200/80">
                     ${sub.cost} • {sub.recurrenceType} • Due: {sub.billingDate}
                   </p>
                 </div>
@@ -126,20 +162,20 @@ export default function SubscriptionList({
       )}
 
       <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">Past Subscriptions</h3>
+        <h3 className="text-lg font-semibold mb-4 text-violet-50">Past Subscriptions</h3>
 
         {pastSubscriptions.length === 0 ? (
-          <p className="text-gray-500 text-sm">No past subscriptions.</p>
+          <p className="text-violet-200/80 text-sm">No past subscriptions.</p>
         ) : (
           <div className="space-y-4">
             {pastSubscriptions.map((sub) => (
               <div
                 key={sub.subscriptionId}
-                className="flex justify-between items-center p-4 border rounded-xl bg-gray-50"
+                className="flex justify-between items-center p-4 border border-violet-300/20 rounded-xl bg-white/10"
               >
                 <div>
-                  <p className="font-medium text-gray-900">{sub.serviceName}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-violet-50">{sub.serviceName}</p>
+                  <p className="text-sm text-violet-200/80">
                     ${sub.cost} • {sub.recurrenceType} • Due: {sub.billingDate}
                   </p>
                 </div>

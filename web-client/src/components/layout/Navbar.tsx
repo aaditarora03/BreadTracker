@@ -30,11 +30,11 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, userEmail, b
     `cursor-pointer transition ${
       activeTab === tab
         ? "text-primary font-semibold"
-        : "text-gray-600 hover:text-primary"
+        : "text-violet-100/80 hover:text-violet-50"
     }`
 
   return (
-    <nav className="bg-card shadow-sm border-b border-gray-200">
+    <nav className="bg-[rgba(16,8,30,0.86)] backdrop-blur-xl shadow-sm border-b border-violet-300/20">
       <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
         <img
@@ -64,7 +64,7 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, userEmail, b
 
           {activeTab === "subscriptions" && (
             <form onSubmit={submitBudget} className="hidden lg:flex items-center gap-2">
-              <label htmlFor="budget-input" className="text-gray-500">Budget</label>
+              <label htmlFor="budget-input" className="text-violet-200/85">Budget</label>
               <input
                 id="budget-input"
                 type="number"
@@ -73,7 +73,7 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, userEmail, b
                 value={budgetInput}
                 onChange={(event) => setBudgetInput(event.target.value)}
                 placeholder="0.00"
-                className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-24 rounded-md border border-violet-300/35 bg-[rgba(26,12,44,0.75)] px-2 py-1 text-sm text-violet-50 placeholder:text-violet-200/50 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button
                 type="submit"
@@ -84,7 +84,7 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, userEmail, b
             </form>
           )}
 
-          <span className="text-gray-500 hidden md:inline">{userEmail}</span>
+          <span className="text-violet-200/75 hidden md:inline">{userEmail}</span>
 
           <button
             className="text-red-500 hover:text-red-600"

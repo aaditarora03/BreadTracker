@@ -42,8 +42,8 @@ export default function WeeklySpendingChart({ subscriptions, period }: Props) {
   const data = generateSpendingChartData(subscriptions, period)
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">
+    <div className="rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.8)] backdrop-blur-md shadow-[0_14px_35px_rgba(5,0,15,0.45)] p-6">
+      <h3 className="text-lg font-semibold mb-4 text-violet-50">
         {getChartTitle(period)}
       </h3>
 

@@ -104,18 +104,18 @@ export default function SpendingCalendar({ subscriptions }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div className="rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.8)] backdrop-blur-md shadow-[0_14px_35px_rgba(5,0,15,0.45)] p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Calendar Spending</h3>
-          <p className="text-sm text-gray-500">Total this month: {formatCurrency(monthTotal)}</p>
+          <h3 className="text-lg font-semibold text-violet-50">Calendar Spending</h3>
+          <p className="text-sm text-violet-200/80">Total this month: {formatCurrency(monthTotal)}</p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={goToPreviousMonth}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-violet-300/35 bg-white/10 px-3 py-1.5 text-sm text-violet-100 hover:bg-white/20"
           >
             Prev
           </button>
@@ -127,7 +127,7 @@ export default function SpendingCalendar({ subscriptions }: Props) {
               const nextMonth = Number(event.target.value)
               setVisibleDate(new Date(year, nextMonth, 1))
             }}
-            className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700"
+            className="rounded-lg border border-violet-300/35 bg-white/10 px-2 py-1.5 text-sm text-violet-100"
           >
             {monthNames.map((monthName, index) => (
               <option key={monthName} value={index}>
@@ -143,7 +143,7 @@ export default function SpendingCalendar({ subscriptions }: Props) {
               const nextYear = Number(event.target.value)
               setVisibleDate(new Date(nextYear, monthIndex, 1))
             }}
-            className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700"
+            className="rounded-lg border border-violet-300/35 bg-white/10 px-2 py-1.5 text-sm text-violet-100"
           >
             {yearOptions.map((optionYear) => (
               <option key={optionYear} value={optionYear}>
@@ -155,20 +155,20 @@ export default function SpendingCalendar({ subscriptions }: Props) {
           <button
             type="button"
             onClick={goToNextMonth}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-violet-300/35 bg-white/10 px-3 py-1.5 text-sm text-violet-100 hover:bg-white/20"
           >
             Next
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 text-xs font-semibold text-gray-500 mb-2">
+      <div className="grid grid-cols-7 gap-2 text-xs font-semibold text-violet-200/80 mb-2">
         {calendarDayLabels.map((dayLabel) => (
           <div key={dayLabel} className="text-center">{dayLabel}</div>
         ))}
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-violet-200/85">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
           Active recurring
@@ -188,10 +188,10 @@ export default function SpendingCalendar({ subscriptions }: Props) {
           <div
             key={day.date.toISOString()}
             className={`min-h-[72px] rounded-lg border p-2 ${
-              day.isCurrentMonth ? "border-gray-200 bg-white" : "border-gray-100 bg-gray-50"
+              day.isCurrentMonth ? "border-violet-300/25 bg-white/10" : "border-violet-300/15 bg-white/5"
             }`}
           >
-            <p className={`text-xs font-semibold ${day.isCurrentMonth ? "text-gray-700" : "text-gray-400"}`}>
+            <p className={`text-xs font-semibold ${day.isCurrentMonth ? "text-violet-100" : "text-violet-300/45"}`}>
               {day.dayOfMonth}
             </p>
             {day.spending > 0 && (

@@ -62,10 +62,10 @@ export default function AuthPanel({ onLogin, onSignup, onForgotPassword, loading
   }
 
   return (
-    <div className="min-h-screen bg-background text-gray-800 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-1">BreadTracker</h2>
-        <p className="text-sm text-gray-500 mb-6">
+    <div className="min-h-screen bg-transparent text-violet-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.82)] backdrop-blur-md shadow-[0_16px_45px_rgba(7,0,18,0.62)] p-6">
+        <h2 className="text-2xl font-semibold text-violet-50 mb-1">BreadTracker</h2>
+        <p className="text-sm text-violet-200/80 mb-6">
           {mode === "login" ? "Sign in to manage your subscriptions." : "Create your account to get started."}
         </p>
 
@@ -77,14 +77,14 @@ export default function AuthPanel({ onLogin, onSignup, onForgotPassword, loading
                 placeholder="First Name"
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <input
                 type="text"
                 placeholder="Last Name"
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </>
           )}
@@ -100,7 +100,7 @@ export default function AuthPanel({ onLogin, onSignup, onForgotPassword, loading
                 setForgotPasswordStatus(null)
               }
             }}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
           <input
@@ -108,7 +108,7 @@ export default function AuthPanel({ onLogin, onSignup, onForgotPassword, loading
             placeholder="Password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
           {mode === "login" && (

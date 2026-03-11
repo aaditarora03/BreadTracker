@@ -25,11 +25,10 @@ import AuthPanel from "./components/auth/AuthPanel"
 import {
   calculateMonthlyExpenses,
   calculateActiveSubscriptions,
-  calculateUpcomingChargesTotal,
   calculateSpendingByPeriod,
   type SpendingPeriod,
 } from "./types/utils/financialUtils"
-import { getBillingOccurrenceInMonth } from "./types/utils/dateUtils"
+import { getBillingOccurrenceInMonth, getNextBillingDateForSubscription } from "./types/utils/dateUtils"
 import {
   createSubscription,
   deleteSubscription,
@@ -102,6 +101,73 @@ export default function App() {
       const parsedBudget = Number(savedBudget)
       if (!Number.isNaN(parsedBudget)) {
         setBudget(parsedBudget)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
+    let rafId: number | null = null
+    let targetX = 50
+    let targetY = 50
+    let leadX = 50
+    let leadY = 50
+    let trailX = 50
+    let trailY = 50
+    let leadVX = 0
+    let leadVY = 0
+    let trailVX = 0
+    let trailVY = 0
+
+    const animateCursorGlow = () => {
+      // Damped spring motion keeps a liquid feel without harsh snapping.
+      leadVX = leadVX * 0.86 + (targetX - leadX) * 0.09
+      leadVY = leadVY * 0.86 + (targetY - leadY) * 0.09
+      leadX += leadVX
+      leadY += leadVY
+
+      trailVX = trailVX * 0.88 + (leadX - trailX) * 0.08
+      trailVY = trailVY * 0.88 + (leadY - trailY) * 0.08
+      trailX += trailVX
+      trailY += trailVY
+
+      const pullX = leadX - trailX
+      const pullY = leadY - trailY
+      const pullDistance = Math.min(20, Math.hypot(pullX, pullY))
+      const leadSpeed = Math.min(12, Math.hypot(leadVX, leadVY))
+      const stretchX = Math.min(1.22, 1 + pullDistance / 60 + leadSpeed / 90)
+      const stretchY = Math.max(0.88, 1 - pullDistance / 80)
+      const angle = Math.atan2(leadVY, leadVX) * (180 / Math.PI)
+      const time = performance.now() / 1000
+      const wobbleStrength = Math.min(0.28, pullDistance / 95 + leadSpeed / 120)
+      const wobbleX = Math.sin(time * 7) * wobbleStrength
+      const wobbleY = Math.cos(time * 6.5) * wobbleStrength
+      const energy = Math.min(0.22, pullDistance / 160 + leadSpeed / 80)
+
+      root.style.setProperty("--cursor-x", `${leadX + wobbleX}%`)
+      root.style.setProperty("--cursor-y", `${leadY + wobbleY}%`)
+      root.style.setProperty("--cursor-trail-x", `${trailX - wobbleX * 0.5}%`)
+      root.style.setProperty("--cursor-trail-y", `${trailY - wobbleY * 0.5}%`)
+      root.style.setProperty("--cursor-stretch-x", `${stretchX}`)
+      root.style.setProperty("--cursor-stretch-y", `${stretchY}`)
+      root.style.setProperty("--cursor-angle", `${Number.isFinite(angle) ? angle : 0}deg`)
+      root.style.setProperty("--cursor-energy", `${energy}`)
+
+      rafId = window.requestAnimationFrame(animateCursorGlow)
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      targetX = (event.clientX / window.innerWidth) * 100
+      targetY = (event.clientY / window.innerHeight) * 100
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    rafId = window.requestAnimationFrame(animateCursorGlow)
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId)
       }
     }
   }, [])
@@ -326,19 +392,22 @@ export default function App() {
   today.setHours(0, 0, 0, 0)
 
   const isPastSubscription = (sub: Subscription) => {
-    const billingDate = new Date(sub.billingDate)
-    billingDate.setHours(0, 0, 0, 0)
-    return !sub.autoRenew && billingDate < today
+    if (sub.autoRenew) {
+      return false
+    }
+
+    return getNextBillingDateForSubscription(sub, today) === null
   }
 
   const subscriptionCostItems = subscriptions.filter((sub) => !isPastSubscription(sub))
   const monthlyExpenses = calculateMonthlyExpenses(subscriptionCostItems)
   const selectedPeriodSpending = calculateSpendingByPeriod(subscriptionCostItems, spendingPeriod)
   const activeSubscriptions = calculateActiveSubscriptions(subscriptions.filter((sub) => !isPastSubscription(sub)))
-  const upcomingChargesTotal = calculateUpcomingChargesTotal(subscriptions)
   const activeSubscriptionItems = subscriptions.filter((sub) => sub.isActive && !isPastSubscription(sub))
   const renewalMonthYear = renewalMonth.getFullYear()
   const renewalMonthIndex = renewalMonth.getMonth()
+  const currentRenewalMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+  const isAtEarliestRenewalMonth = renewalMonth <= currentRenewalMonthStart
   const upcomingRenewals = subscriptions
     .filter((sub) => sub.autoRenew)
     .map((sub) => ({
@@ -348,6 +417,7 @@ export default function App() {
     .filter((item): item is { sub: Subscription; occurrenceDate: Date } => item.occurrenceDate !== null)
     .filter((item) => item.occurrenceDate >= today)
     .sort((a, b) => a.occurrenceDate.getTime() - b.occurrenceDate.getTime())
+  const upcomingChargesTotal = upcomingRenewals.reduce((total, item) => total + item.sub.cost, 0)
 
   const formatRenewalDate = (value: string | Date) => {
     const date = value instanceof Date ? value : new Date(value)
@@ -358,7 +428,10 @@ export default function App() {
   }
 
   const goToPreviousRenewalMonth = () => {
-    setRenewalMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))
+    setRenewalMonth((current) => {
+      const previous = new Date(current.getFullYear(), current.getMonth() - 1, 1)
+      return previous < currentRenewalMonthStart ? current : previous
+    })
   }
 
   const goToNextRenewalMonth = () => {
@@ -381,7 +454,7 @@ export default function App() {
 
   const budgetUsageRatio = budget && budget > 0 ? monthlyExpenses / budget : null
   const budgetValueClassName = budgetUsageRatio === null
-    ? "text-gray-900"
+    ? "text-violet-50"
     : budgetUsageRatio < 0.5
       ? "text-emerald-600"
       : budgetUsageRatio < 0.9
@@ -425,22 +498,22 @@ export default function App() {
         {activeTab === "dashboard" && (
           <>
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <h2 className="text-2xl font-semibold text-violet-50">
                 Dashboard Overview
               </h2>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-violet-200/80 text-sm mt-1">
                 Here’s a summary of your financial activity.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-4">
                 <div>
-                  <label htmlFor="spending-display-mode" className="mr-2 text-sm font-medium text-gray-700">
+                  <label htmlFor="spending-display-mode" className="mr-2 text-sm font-medium text-violet-100/90">
                     Display:
                   </label>
                   <select
                     id="spending-display-mode"
                     value={spendingDisplayMode}
                     onChange={(event) => setSpendingDisplayMode(event.target.value as SpendingDisplayMode)}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="rounded-lg border border-violet-300/35 bg-[rgba(26,12,44,0.75)] px-3 py-2 text-sm text-violet-50 focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="bar">Bar chart</option>
                     <option value="calendar">Calendar</option>
@@ -448,14 +521,14 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label htmlFor="spending-period" className="mr-2 text-sm font-medium text-gray-700">
+                  <label htmlFor="spending-period" className="mr-2 text-sm font-medium text-violet-100/90">
                     Spending view:
                   </label>
                   <select
                     id="spending-period"
                     value={spendingPeriod}
                     onChange={(event) => setSpendingPeriod(event.target.value as SpendingPeriod)}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="rounded-lg border border-violet-300/35 bg-[rgba(26,12,44,0.75)] px-3 py-2 text-sm text-violet-50 focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -475,22 +548,22 @@ export default function App() {
                 value={`$${selectedPeriodSpending.toFixed(2)}`}
               />
 
-              <div className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg transition duration-200 ${openPopup === "costs" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <div className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-violet-300/25 bg-[rgba(22,10,38,0.95)] p-3 shadow-[0_16px_45px_rgba(7,0,18,0.62)] transition duration-200 ${openPopup === "costs" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-200/75">
                   Subscription Costs
                 </p>
 
                 {subscriptionCostItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">No subscriptions yet.</p>
+                  <p className="text-sm text-violet-200/80">No subscriptions yet.</p>
                 ) : (
                   <div className="max-h-56 space-y-2 overflow-y-auto">
                     {subscriptionCostItems.map((sub) => (
                       <div
                         key={sub.subscriptionId}
-                        className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                        className="rounded-lg border border-violet-300/20 bg-white/10 px-3 py-2"
                       >
-                        <p className="text-sm font-semibold text-gray-900">{sub.serviceName}</p>
-                        <p className="text-xs text-gray-600">{formatRecurringCost(sub)}</p>
+                        <p className="text-sm font-semibold text-violet-50">{sub.serviceName}</p>
+                        <p className="text-xs text-violet-200/80">{formatRecurringCost(sub)}</p>
                       </div>
                     ))}
                   </div>
@@ -508,13 +581,13 @@ export default function App() {
                 value={`${activeSubscriptions}`}
               />
 
-              <div className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg transition duration-200 ${openPopup === "active" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <div className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-violet-300/25 bg-[rgba(22,10,38,0.95)] p-3 shadow-[0_16px_45px_rgba(7,0,18,0.62)] transition duration-200 ${openPopup === "active" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-200/75">
                   Active Subscriptions
                 </p>
 
                 {activeSubscriptionItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">No active subscriptions yet.</p>
+                  <p className="text-sm text-violet-200/80">No active subscriptions yet.</p>
                 ) : (
                   <div className="max-h-56 space-y-2 overflow-y-auto">
                     {activeSubscriptionItems.map((sub) => {
@@ -523,9 +596,9 @@ export default function App() {
                       return (
                         <div
                           key={sub.subscriptionId}
-                          className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 flex items-center justify-between gap-3"
+                          className="rounded-lg border border-violet-300/20 bg-white/10 px-3 py-2 flex items-center justify-between gap-3"
                         >
-                          <p className="text-sm font-semibold text-gray-900">{sub.serviceName}</p>
+                          <p className="text-sm font-semibold text-violet-50">{sub.serviceName}</p>
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                               isEndingSoon ? "bg-yellow-100 text-yellow-700" : "bg-emerald-100 text-emerald-700"
@@ -551,9 +624,9 @@ export default function App() {
                 value={`$${upcomingChargesTotal.toFixed(2)}`}
               />
 
-              <div className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg transition duration-200 ${openPopup === "renewals" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}>
+              <div className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-violet-300/25 bg-[rgba(22,10,38,0.95)] p-3 shadow-[0_16px_45px_rgba(7,0,18,0.62)] transition duration-200 ${openPopup === "renewals" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}>
                 <div className="mb-3 space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-sm font-semibold text-violet-100/95">
                     Upcoming Renewals
                   </p>
 
@@ -561,7 +634,12 @@ export default function App() {
                     <button
                       type="button"
                       onClick={goToPreviousRenewalMonth}
-                      className="rounded border border-gray-300 px-1.5 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50"
+                      disabled={isAtEarliestRenewalMonth}
+                      className={`rounded border px-1.5 py-0.5 text-[11px] ${
+                        isAtEarliestRenewalMonth
+                          ? "cursor-not-allowed border-violet-300/20 bg-white/5 text-violet-200/35"
+                          : "border-violet-300/35 bg-white/10 text-violet-100/95 hover:bg-white/20"
+                      }`}
                     >
                       Prev
                     </button>
@@ -572,21 +650,21 @@ export default function App() {
                         const nextMonth = Number(event.target.value)
                         setRenewalMonth(new Date(renewalMonthYear, nextMonth, 1))
                       }}
-                      className="w-24 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700"
+                      className="w-24 rounded border border-violet-300/35 bg-white/10 px-1.5 py-0.5 text-[11px] text-violet-100/95"
                     >
                       {monthNames.map((monthName, index) => (
                         <option key={monthName} value={index}>{monthName}</option>
                       ))}
                     </select>
 
-                    <span className="rounded border border-gray-300 bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600">
+                    <span className="rounded border border-violet-300/35 bg-white/10 px-1.5 py-0.5 text-[11px] text-violet-100/95">
                       {renewalMonthYear}
                     </span>
 
                     <button
                       type="button"
                       onClick={goToNextRenewalMonth}
-                      className="rounded border border-gray-300 px-1.5 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50"
+                      className="rounded border border-violet-300/35 bg-white/10 px-1.5 py-0.5 text-[11px] text-violet-100/95 hover:bg-white/20"
                     >
                       Next
                     </button>
@@ -594,16 +672,16 @@ export default function App() {
                 </div>
 
                 {upcomingRenewals.length === 0 ? (
-                  <p className="text-sm text-gray-500">No upcoming renewals.</p>
+                  <p className="text-sm text-violet-200/80">No upcoming renewals.</p>
                 ) : (
                   <div className="max-h-56 space-y-2 overflow-y-auto">
                     {upcomingRenewals.map(({ sub, occurrenceDate }) => (
                       <div
                         key={sub.subscriptionId}
-                        className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                        className="rounded-lg border border-violet-300/20 bg-white/10 px-3 py-2"
                       >
-                        <p className="text-sm font-semibold text-gray-900">{sub.serviceName}</p>
-                        <p className="text-xs text-gray-600">Renewal date: {formatRenewalDate(occurrenceDate)}</p>
+                        <p className="text-sm font-semibold text-violet-50">{sub.serviceName}</p>
+                        <p className="text-xs text-violet-200/80">Renewal date: {formatRenewalDate(occurrenceDate)}</p>
                       </div>
                     ))}
                   </div>

@@ -61,7 +61,26 @@ export function getNextBillingDateForSubscription(
   const billingDate = startOfDay(parseDateOnly(subscription.billingDate))
 
   if (!subscription.autoRenew) {
-    return billingDate >= today ? billingDate : null
+    if (billingDate >= today) {
+      return billingDate
+    }
+
+    if (subscription.recurrenceType === "weekly") {
+      const cycleEnd = new Date(
+        billingDate.getFullYear(),
+        billingDate.getMonth(),
+        billingDate.getDate() + 7,
+      )
+      return cycleEnd >= today ? cycleEnd : null
+    }
+
+    if (subscription.recurrenceType === "monthly") {
+      const cycleEnd = addMonthsClamped(billingDate, 1)
+      return cycleEnd >= today ? cycleEnd : null
+    }
+
+    const cycleEnd = addYearsClamped(billingDate, 1)
+    return cycleEnd >= today ? cycleEnd : null
   }
 
   // For recurring subscriptions, include the initial billing date if it is still in the future.
