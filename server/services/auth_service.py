@@ -3,9 +3,22 @@ from dotenv import load_dotenv
 from supabase import create_client, AuthApiError
 
 load_dotenv()
-supabase = create_client(os.getenv("SUPABASE_PROJECT_URL"), os.getenv("SUPABASE_API_KEY"))
+
+_supabase_url = os.getenv("SUPABASE_PROJECT_URL")
+_supabase_key = os.getenv("SUPABASE_API_KEY")
+supabase = create_client(_supabase_url, _supabase_key) if _supabase_url and _supabase_key else None
+
+
+def _require_supabase_client():
+    if supabase is None:
+        return "Supabase is not configured. Set SUPABASE_PROJECT_URL and SUPABASE_API_KEY."
+    return None
 
 def signup(email, password, first_name, last_name):
+    config_error = _require_supabase_client()
+    if config_error:
+        return config_error
+
     # sign_up usually returns an AuthResponse object
     res = supabase.auth.sign_up({
         "email": email, 
@@ -21,18 +34,30 @@ def signup(email, password, first_name, last_name):
     return res
 
 def login(email, password):
+    config_error = _require_supabase_client()
+    if config_error:
+        return config_error
+
     try:
         return supabase.auth.sign_in_with_password({"email": email, "password": password})
     except AuthApiError as e:
         return f"Login failed: {e.message}"
 
 def reset_password(new_password):
+    config_error = _require_supabase_client()
+    if config_error:
+        return config_error
+
     try:
         return supabase.auth.update_user({"password": new_password})
     except AuthApiError as e:
         return f"Update failed: {e.message}"
 
 def logout():
+    config_error = _require_supabase_client()
+    if config_error:
+        return config_error
+
     try:
         return supabase.auth.sign_out()
     except AuthApiError as e:

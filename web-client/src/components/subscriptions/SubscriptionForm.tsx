@@ -14,33 +14,37 @@ import { useState } from "react"
 import type { Subscription } from "../../types/Subscription"
 
 interface Props {
-  onAdd: (subscription: Subscription) => void
+  onAdd: (subscription: Omit<Subscription, "subscriptionId">) => Promise<void>
 }
 
 export default function SubscriptionForm({ onAdd }: Props) {
   const [name, setName] = useState("")
   const [cost, setCost] = useState("")
   const [billingDate, setBillingDate] = useState("")
+  const [recurrenceType, setRecurrenceType] = useState<"weekly" | "monthly" | "yearly">("monthly")
 
     // Handles form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!name || !cost || !billingDate) return
 
-    const newSubscription: Subscription = {
-      id: Date.now(),
-      name,
+    const newSubscription: Omit<Subscription, "subscriptionId"> = {
+      serviceName: name,
       cost: parseFloat(cost),
       billingDate,
+      recurrenceType,
+      autoRenew: true,
+      isActive: true,
     }
 
-    onAdd(newSubscription)
+    await onAdd(newSubscription)
 
     // Clears form
     setName("")
     setCost("")
     setBillingDate("")
+    setRecurrenceType("monthly")
   }
 
   return (
@@ -52,7 +56,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
         Add Subscription
       </h3>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <input
           type="text"
           placeholder="Service Name"
@@ -76,6 +80,16 @@ export default function SubscriptionForm({ onAdd }: Props) {
           onChange={(e) => setBillingDate(e.target.value)}
           className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
         />
+
+        <select
+          value={recurrenceType}
+          onChange={(e) => setRecurrenceType(e.target.value as "weekly" | "monthly" | "yearly")}
+          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+        >
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
       </div>
 
       <button

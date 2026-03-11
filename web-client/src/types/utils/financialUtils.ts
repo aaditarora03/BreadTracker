@@ -13,11 +13,23 @@
 
 import type { Subscription } from "../Subscription"
 
+function getMonthlyEquivalent(sub: Subscription): number {
+  if (sub.recurrenceType === "weekly") {
+    return (sub.cost * 52) / 12
+  }
+
+  if (sub.recurrenceType === "yearly") {
+    return sub.cost / 12
+  }
+
+  return sub.cost
+}
+
 /**
  * Calculates the total monthly cost of all active subscriptions
  */
 export function calculateMonthlyExpenses(subscriptions: Subscription[]): number {
-  return subscriptions.reduce((total, sub) => total + sub.cost, 0)
+  return subscriptions.reduce((total, sub) => total + getMonthlyEquivalent(sub), 0)
 }
 
 /**
