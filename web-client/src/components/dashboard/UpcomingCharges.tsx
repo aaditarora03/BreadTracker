@@ -26,12 +26,12 @@ export default function UpcomingCharges({ subscriptions }: Props) {
 
           return (
             <div
-              key={sub.id}
+              key={sub.subscriptionId}
               className="flex justify-between items-center"
             >
               <div>
                 <p className="font-medium text-gray-900">
-                  {sub.name}
+                  {sub.serviceName}
                 </p>
                 <p className="text-sm text-gray-500">
                   Due in {daysLeft} days
