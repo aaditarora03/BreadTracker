@@ -29,6 +29,7 @@ import {
 import {
   createSubscription,
   deleteSubscription,
+  forgotPassword,
   getSubscriptions,
   login,
   logout,
@@ -157,6 +158,16 @@ export default function App() {
       setError(requestError instanceof Error ? requestError.message : "Signup failed")
     }
     setLoading(false)
+  }
+
+  const handleForgotPassword = async (email: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      return await forgotPassword({ email })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleLogout = async () => {
@@ -323,7 +334,15 @@ export default function App() {
         : "text-red-600"
 
   if (!auth) {
-    return <AuthPanel onLogin={handleLogin} onSignup={handleSignup} loading={loading} error={error} />
+    return (
+      <AuthPanel
+        onLogin={handleLogin}
+        onSignup={handleSignup}
+        onForgotPassword={handleForgotPassword}
+        loading={loading}
+        error={error}
+      />
+    )
   }
 
   return (

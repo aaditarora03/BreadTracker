@@ -13,16 +13,19 @@ interface SignupFormData extends LoginFormData {
 interface Props {
   onLogin: (data: LoginFormData) => Promise<void>
   onSignup: (data: SignupFormData) => Promise<void>
+  onForgotPassword: (email: string) => Promise<string>
   loading: boolean
   error: string | null
 }
 
-export default function AuthPanel({ onLogin, onSignup, loading, error }: Props) {
+export default function AuthPanel({ onLogin, onSignup, onForgotPassword, loading, error }: Props) {
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState<string | null>(null)
+  const [forgotPasswordStatus, setForgotPasswordStatus] = useState<"success" | "error" | null>(null)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -39,6 +42,23 @@ export default function AuthPanel({ onLogin, onSignup, loading, error }: Props) 
     }
 
     await onLogin({ email, password })
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setForgotPasswordStatus("error")
+      setForgotPasswordMessage("Enter your email address first.")
+      return
+    }
+
+    try {
+      const message = await onForgotPassword(email)
+      setForgotPasswordStatus("success")
+      setForgotPasswordMessage(message)
+    } catch (requestError) {
+      setForgotPasswordStatus("error")
+      setForgotPasswordMessage(requestError instanceof Error ? requestError.message : "Failed to send reset email")
+    }
   }
 
   return (
@@ -73,7 +93,13 @@ export default function AuthPanel({ onLogin, onSignup, loading, error }: Props) 
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              if (forgotPasswordMessage) {
+                setForgotPasswordMessage(null)
+                setForgotPasswordStatus(null)
+              }
+            }}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
@@ -84,6 +110,25 @@ export default function AuthPanel({ onLogin, onSignup, loading, error }: Props) 
             onChange={(event) => setPassword(event.target.value)}
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
+
+          {mode === "login" && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="text-sm text-primary hover:underline disabled:opacity-60"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
+          {forgotPasswordMessage && (
+            <p className={`text-sm ${forgotPasswordStatus === "error" ? "text-red-600" : "text-emerald-600"}`}>
+              {forgotPasswordMessage}
+            </p>
+          )}
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -98,7 +143,11 @@ export default function AuthPanel({ onLogin, onSignup, loading, error }: Props) 
 
         <button
           type="button"
-          onClick={() => setMode((current) => (current === "login" ? "signup" : "login"))}
+          onClick={() => {
+            setMode((current) => (current === "login" ? "signup" : "login"))
+            setForgotPasswordMessage(null)
+            setForgotPasswordStatus(null)
+          }}
           className="mt-4 text-sm text-primary hover:underline"
         >
           {mode === "login" ? "Need an account? Sign up" : "Already have an account? Log in"}
