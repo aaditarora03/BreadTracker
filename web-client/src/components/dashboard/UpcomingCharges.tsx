@@ -1,8 +1,11 @@
-import type { Subscription } from "../../types/Subscription"
-import { getDaysLeftFromDate, getNextBillingDateForSubscription } from "../../types/utils/dateUtils"
+import type { Subscription } from "../../types/Subscription";
+import {
+  getDaysLeftFromDate,
+  getNextBillingDateForSubscription,
+} from "../../lib/utils/dateUtils";
 
 interface Props {
-  subscriptions: Subscription[]
+  subscriptions: Subscription[];
 }
 
 export default function UpcomingCharges({ subscriptions }: Props) {
@@ -11,8 +14,11 @@ export default function UpcomingCharges({ subscriptions }: Props) {
       sub,
       nextBillingDate: getNextBillingDateForSubscription(sub),
     }))
-    .filter((item): item is { sub: Subscription; nextBillingDate: Date } => item.nextBillingDate !== null)
-    .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime())
+    .filter(
+      (item): item is { sub: Subscription; nextBillingDate: Date } =>
+        item.nextBillingDate !== null,
+    )
+    .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
 
   return (
     <div className="rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.8)] backdrop-blur-md shadow-[0_14px_35px_rgba(5,0,15,0.45)] p-6">
@@ -24,8 +30,9 @@ export default function UpcomingCharges({ subscriptions }: Props) {
 
       <div className="space-y-4">
         {sorted.slice(0, 4).map(({ sub, nextBillingDate }) => {
-          const daysLeft = getDaysLeftFromDate(nextBillingDate)
-          const dueText = daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} days`
+          const daysLeft = getDaysLeftFromDate(nextBillingDate);
+          const dueText =
+            daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} days`;
 
           return (
             <div
@@ -33,21 +40,17 @@ export default function UpcomingCharges({ subscriptions }: Props) {
               className="flex justify-between items-center"
             >
               <div>
-                <p className="font-medium text-violet-50">
-                  {sub.serviceName}
-                </p>
-                <p className="text-sm text-violet-200/80">
-                  {dueText}
-                </p>
+                <p className="font-medium text-violet-50">{sub.serviceName}</p>
+                <p className="text-sm text-violet-200/80">{dueText}</p>
               </div>
 
               <p className="font-semibold text-violet-100">
-                ${sub.cost}
+                ${sub.cost.toFixed(2)}
               </p>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
