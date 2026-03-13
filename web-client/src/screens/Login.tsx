@@ -43,12 +43,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-violet-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.82)] backdrop-blur-md shadow-[0_16px_45px_rgba(7,0,18,0.62)] p-6">
-        <h2 className="text-2xl font-semibold text-violet-50 mb-1">
+    <div className="min-h-screen bg-transparent text-gray-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white shadow-xl p-6">
+        <h2 className="text-2xl font-semibold text-primary mb-1">
           BreadTracker
         </h2>
-        <p className="text-sm text-violet-200/80 mb-6">
+        <p className="text-sm text-gray-500 mb-6">
           Sign in to manage your subscriptions.
         </p>
 
@@ -63,7 +63,7 @@ export default function Login() {
                 clearError();
                 setValidationErrors((prev) => ({ ...prev, email: "" }));
               }}
-              className={`w-full border ${validationErrors.email ? "border-red-500" : "border-violet-300/35"} rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary`}
+              className={`w-full border ${validationErrors.email ? "border-red-500" : "border-gray-300"} rounded-lg bg-gray-50 text-gray-900 placeholder:text-gray-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
             />
             {validationErrors.email && (
               <p className="text-xs text-red-500 mt-1">
@@ -81,7 +81,7 @@ export default function Login() {
                 setPassword(event.target.value);
                 setValidationErrors((prev) => ({ ...prev, password: "" }));
               }}
-              className={`w-full border ${validationErrors.password ? "border-red-500" : "border-violet-300/35"} rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary`}
+              className={`w-full border ${validationErrors.password ? "border-red-500" : "border-gray-300"} rounded-lg bg-gray-50 text-gray-900 placeholder:text-gray-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
             />
             {validationErrors.password && (
               <p className="text-xs text-red-500 mt-1">

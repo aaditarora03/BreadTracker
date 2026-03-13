@@ -78,7 +78,7 @@ export default function AuthPanel({
   return (
     <div className="min-h-screen bg-transparent text-gray-900 flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white shadow-xl p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-1">
+        <h2 className="text-2xl font-semibold text-primary mb-1">
           BreadTracker
         </h2>
         <p className="text-sm text-gray-500 mb-6">
