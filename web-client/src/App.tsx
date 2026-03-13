@@ -14,10 +14,11 @@ import {
   deleteSubscription,
   getSubscriptions,
   updateSubscription,
+  AuthError,
 } from "./api/client";
 
 export default function App() {
-  const { auth } = useAuth();
+  const { auth, signOut } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,18 +124,22 @@ export default function App() {
         const data = await getSubscriptions(auth.token);
         setSubscriptions(data);
       } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Failed to load subscriptions",
-        );
+        if (requestError instanceof AuthError) {
+          void signOut();
+        } else {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Failed to load subscriptions",
+          );
+        }
       } finally {
         setLoading(false);
       }
     };
 
     void loadSubscriptions();
-  }, [auth]);
+  }, [auth, signOut]);
 
   const handleAdd = async (
     newSubscription: Omit<Subscription, "subscriptionId">,
@@ -154,11 +159,15 @@ export default function App() {
       });
       setSubscriptions((prev) => [...prev, created]);
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Failed to add subscription",
-      );
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to add subscription",
+        );
+      }
     }
   };
 
@@ -174,11 +183,15 @@ export default function App() {
         prev.filter((sub) => sub.subscriptionId !== subscriptionId),
       );
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Failed to delete subscription",
-      );
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to delete subscription",
+        );
+      }
     }
   };
 
@@ -214,11 +227,15 @@ export default function App() {
         ),
       );
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Failed to cancel subscription",
-      );
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to cancel subscription",
+        );
+      }
     }
   };
 
@@ -238,11 +255,15 @@ export default function App() {
         ),
       );
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Failed to enable auto renew",
-      );
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to enable auto renew",
+        );
+      }
     }
   };
 
@@ -270,11 +291,15 @@ export default function App() {
         ),
       );
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Failed to renew subscription",
-      );
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to renew subscription",
+        );
+      }
     }
   };
 

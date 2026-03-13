@@ -1,6 +1,13 @@
 import type { Subscription } from "../types/Subscription"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:9001/api"
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "AuthError"
+  }
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api"
 
 function getApiBaseCandidates(): string[] {
   const candidates = [API_BASE_URL]
@@ -167,6 +174,9 @@ async function request<T>(
       detail = parseErrorDetail(data.detail ?? data)
     } catch {
       // No-op: keep fallback message.
+    }
+    if (response.status === 401) {
+      throw new AuthError(detail)
     }
     throw new Error(detail)
   }
