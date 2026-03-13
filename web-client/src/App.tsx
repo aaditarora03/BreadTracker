@@ -710,6 +710,10 @@ export default function App() {
           </>
         )}
 
+
+
+
+
         {activeTab === "subscriptions" && (
           <SubscriptionList
             subscriptions={subscriptions}
