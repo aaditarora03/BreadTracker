@@ -33,11 +33,11 @@ export default function Navbar({ budget, onSaveBudget }: NavbarProps) {
     `cursor-pointer transition ${
       location.pathname === path
         ? "text-primary font-semibold"
-        : "text-violet-100/80 hover:text-violet-50"
+        : "text-gray-500 hover:text-gray-900"
     }`;
 
   return (
-    <nav className="bg-[rgba(16,8,30,0.86)] backdrop-blur-xl shadow-sm border-b border-violet-300/20">
+    <nav className="bg-white shadow-md relative z-10">
       <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-3">
           <img
@@ -63,7 +63,7 @@ export default function Navbar({ budget, onSaveBudget }: NavbarProps) {
           >
             <label
               htmlFor="budget-input"
-              className="text-xs font-semibold uppercase tracking-wider text-violet-300/70 mr-1"
+              className="text-xs font-semibold uppercase tracking-wider text-gray-500 mr-1"
             >
               Budget
             </label>
@@ -75,7 +75,7 @@ export default function Navbar({ budget, onSaveBudget }: NavbarProps) {
               value={budgetInput}
               onChange={(event) => setBudgetInput(event.target.value)}
               placeholder="0.00"
-              className="w-24 rounded-md border border-violet-300/35 bg-[rgba(26,12,44,0.75)] px-2 py-1 text-sm text-violet-50 placeholder:text-violet-200/50 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <button
               type="submit"
@@ -85,7 +85,7 @@ export default function Navbar({ budget, onSaveBudget }: NavbarProps) {
             </button>
           </form>
 
-          <span className="text-emerald-400 font-medium hidden md:inline">
+          <span className="text-gray-700 font-medium hidden md:inline">
             {auth?.email}
           </span>
 

@@ -106,15 +106,13 @@ export default function SubscriptionList({
     <div>
       <SubscriptionForm onAdd={onAdd} />
 
-      <div className="rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.8)] backdrop-blur-md shadow-[0_14px_35px_rgba(5,0,15,0.45)] p-6 max-w-3xl">
-        <h2 className="text-xl font-semibold mb-6 text-violet-50">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-xl p-6 max-w-3xl">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">
           Subscriptions
         </h2>
 
         {activeSubscriptions.length === 0 ? (
-          <p className="text-violet-200/80 text-sm">
-            No subscriptions added yet.
-          </p>
+          <p className="text-gray-500 text-sm">No subscriptions added yet.</p>
         ) : (
           // Renders each subscription with name, cost, billing date, days left badge, and delete button
           <div className="space-y-4">
@@ -124,13 +122,13 @@ export default function SubscriptionList({
               return (
                 <div
                   key={sub.subscriptionId}
-                  className="flex justify-between items-center p-4 border border-violet-300/20 rounded-xl bg-white/10"
+                  className="flex justify-between items-center p-4 border border-gray-200 rounded-xl bg-gray-50"
                 >
                   <div>
-                    <p className="font-medium text-violet-50">
+                    <p className="font-medium text-gray-900">
                       {sub.serviceName}
                     </p>
-                    <p className="text-sm text-violet-200/80">
+                    <p className="text-sm text-gray-500">
                       ${sub.cost.toFixed(2)} • {sub.recurrenceType} • Due:{" "}
                       {sub.billingDate}
                     </p>
@@ -173,24 +171,24 @@ export default function SubscriptionList({
         )}
 
         <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-4 text-violet-50">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">
             Past Subscriptions
           </h3>
 
           {pastSubscriptions.length === 0 ? (
-            <p className="text-violet-200/80 text-sm">No past subscriptions.</p>
+            <p className="text-gray-500 text-sm">No past subscriptions.</p>
           ) : (
             <div className="space-y-4">
               {pastSubscriptions.map((sub) => (
                 <div
                   key={sub.subscriptionId}
-                  className="flex justify-between items-center p-4 border border-violet-300/20 rounded-xl bg-white/10"
+                  className="flex justify-between items-center p-4 border border-gray-200 rounded-xl bg-gray-50"
                 >
                   <div>
-                    <p className="font-medium text-violet-50">
+                    <p className="font-medium text-gray-900">
                       {sub.serviceName}
                     </p>
-                    <p className="text-sm text-violet-200/80">
+                    <p className="text-sm text-gray-500">
                       ${sub.cost.toFixed(2)} • {sub.recurrenceType} • Due:{" "}
                       {sub.billingDate}
                     </p>
