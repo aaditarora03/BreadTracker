@@ -12,6 +12,9 @@
  */
 
 import type { Subscription } from "../Subscription"
+import { getNextBillingDateForSubscription } from "./dateUtils"
+
+export type SpendingPeriod = "weekly" | "monthly" | "yearly"
 
 function getMonthlyEquivalent(sub: Subscription): number {
   if (sub.recurrenceType === "weekly") {
@@ -32,6 +35,23 @@ export function calculateMonthlyExpenses(subscriptions: Subscription[]): number 
   return subscriptions.reduce((total, sub) => total + getMonthlyEquivalent(sub), 0)
 }
 
+export function calculateSpendingByPeriod(
+  subscriptions: Subscription[],
+  period: SpendingPeriod,
+): number {
+  const monthlyTotal = calculateMonthlyExpenses(subscriptions)
+
+  if (period === "weekly") {
+    return (monthlyTotal * 12) / 52
+  }
+
+  if (period === "yearly") {
+    return monthlyTotal * 12
+  }
+
+  return monthlyTotal
+}
+
 /**
  * Returns the number of active subscriptions
  */
@@ -44,11 +64,18 @@ export function calculateActiveSubscriptions(subscriptions: Subscription[]): num
  */
 export function calculateUpcomingChargesTotal(subscriptions: Subscription[]): number {
   const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   return subscriptions
-    .filter((sub) => {
-      const billingDate = new Date(sub.billingDate)
-      return billingDate >= today
+    .map((sub) => ({
+      sub,
+      nextBillingDate: getNextBillingDateForSubscription(sub, today),
+    }))
+    .filter((item): item is { sub: Subscription; nextBillingDate: Date } => item.nextBillingDate !== null)
+    .filter((item) => {
+      return item.nextBillingDate.getFullYear() === today.getFullYear()
+        && item.nextBillingDate.getMonth() === today.getMonth()
+        && item.nextBillingDate >= today
     })
-    .reduce((total, sub) => total + sub.cost, 0)
+    .reduce((total, item) => total + item.sub.cost, 0)
 }

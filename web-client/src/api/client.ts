@@ -1,5 +1,12 @@
 import type { Subscription } from "../types/Subscription"
 
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "AuthError"
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api"
 
 function getApiBaseCandidates(): string[] {
@@ -40,11 +47,16 @@ interface LoginPayload {
   password: string
 }
 
+interface ForgotPasswordPayload {
+  email: string
+}
+
 interface CreateSubscriptionPayload {
   serviceName: string
   cost: number
   billingDate: string
   recurrenceType: "weekly" | "monthly" | "yearly"
+  autoRenew: boolean
 }
 
 interface UpdateSubscriptionPayload {
@@ -72,6 +84,52 @@ function normalizeSubscription(item: BackendSubscription): Subscription {
     autoRenew: item.auto_renew,
     isActive: item.is_active,
   }
+}
+
+function parseErrorDetail(detail: unknown): string {
+  if (typeof detail === "string" && detail.trim()) {
+    return detail
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === "string") {
+          return item
+        }
+
+        if (item && typeof item === "object" && "msg" in item) {
+          const msg = (item as { msg?: unknown }).msg
+          if (typeof msg === "string") {
+            return msg
+          }
+        }
+
+        return null
+      })
+      .filter((msg): msg is string => Boolean(msg))
+
+    if (messages.length > 0) {
+      return messages.join("; ")
+    }
+  }
+
+  if (detail && typeof detail === "object") {
+    if ("message" in detail) {
+      const message = (detail as { message?: unknown }).message
+      if (typeof message === "string" && message.trim()) {
+        return message
+      }
+    }
+
+    try {
+      return JSON.stringify(detail)
+    } catch {
+      return "Request failed"
+    }
+  }
+
+  return "Request failed"
 }
 
 async function request<T>(
@@ -113,9 +171,12 @@ async function request<T>(
     let detail = "Request failed"
     try {
       const data = await response.json()
-      detail = data.detail ?? detail
+      detail = parseErrorDetail(data.detail ?? data)
     } catch {
       // No-op: keep fallback message.
+    }
+    if (response.status === 401) {
+      throw new AuthError(detail)
     }
     throw new Error(detail)
   }
@@ -135,6 +196,15 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
     method: "POST",
     body: JSON.stringify(payload),
   })
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload): Promise<string> {
+  const data = await request<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+
+  return data.message
 }
 
 export async function logout(token: string): Promise<void> {

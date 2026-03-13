@@ -11,5 +11,9 @@ class UserLogin(SqlCamelModel):
     email: EmailStr
     password: str
 
+
+class ForgotPasswordRequest(SqlCamelModel):
+    email: EmailStr
+
 class PasswordUpdate(SqlCamelModel):
     new_password: str

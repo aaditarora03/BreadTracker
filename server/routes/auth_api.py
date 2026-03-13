@@ -1,11 +1,13 @@
+import os
+
 from models import Profile
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from db import get_session
-from schemas import UserSignup, UserLogin, PasswordUpdate
-from services.auth_service import signup, login, reset_password, logout
+from schemas import UserSignup, UserLogin, PasswordUpdate, ForgotPasswordRequest
+from services.auth_service import signup, login, reset_password, logout, request_password_reset
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
@@ -45,6 +47,19 @@ async def auth_login(user: UserLogin):
     if isinstance(result, str):
         raise HTTPException(status_code=401, detail=result)
     return result.session
+
+
+@router.post("/forgot-password")
+async def auth_forgot_password(data: ForgotPasswordRequest):
+    redirect_to = os.getenv("PASSWORD_RESET_REDIRECT_URL")
+    result = request_password_reset(data.email, redirect_to=redirect_to)
+
+    if isinstance(result, str):
+        if "not configured" in result.lower():
+            raise HTTPException(status_code=500, detail=result)
+        raise HTTPException(status_code=400, detail=result)
+
+    return {"message": "If an account exists for this email, a reset link has been sent."}
 
 
 # TODO: Finish when working on reset password screen

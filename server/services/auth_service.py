@@ -65,6 +65,30 @@ def reset_password(new_password):
     except Exception as e:
         return f"Update failed: {str(e)}"
 
+
+def request_password_reset(email, redirect_to=None):
+    config_error = _require_supabase_client()
+    if config_error:
+        return config_error
+
+    try:
+        options = {"redirect_to": redirect_to} if redirect_to else None
+
+        # Support multiple supabase-py method names across versions.
+        if hasattr(supabase.auth, "reset_password_for_email"):
+            return supabase.auth.reset_password_for_email(email, options)
+
+        if hasattr(supabase.auth, "reset_password_email"):
+            if options is None:
+                return supabase.auth.reset_password_email(email)
+            return supabase.auth.reset_password_email(email, options)
+
+        return "Forgot password is not supported by the installed Supabase SDK version."
+    except AuthApiError as e:
+        return f"Reset email failed: {e.message}"
+    except Exception as e:
+        return f"Reset email failed: {str(e)}"
+
 def logout():
     config_error = _require_supabase_client()
     if config_error:

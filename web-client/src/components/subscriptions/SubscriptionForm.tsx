@@ -22,6 +22,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
   const [cost, setCost] = useState("")
   const [billingDate, setBillingDate] = useState("")
   const [recurrenceType, setRecurrenceType] = useState<"weekly" | "monthly" | "yearly">("monthly")
+  const [autoRenew, setAutoRenew] = useState(true)
 
     // Handles form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +35,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
       cost: parseFloat(cost),
       billingDate,
       recurrenceType,
-      autoRenew: true,
+      autoRenew,
       isActive: true,
     }
 
@@ -45,14 +46,15 @@ export default function SubscriptionForm({ onAdd }: Props) {
     setCost("")
     setBillingDate("")
     setRecurrenceType("monthly")
+    setAutoRenew(true)
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 max-w-3xl"
+      className="rounded-2xl border border-violet-300/25 bg-[rgba(24,10,40,0.8)] backdrop-blur-md shadow-[0_14px_35px_rgba(5,0,15,0.45)] p-6 mb-6 max-w-3xl"
     >
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">
+      <h3 className="text-lg font-semibold mb-4 text-violet-50">
         Add Subscription
       </h3>
 
@@ -62,7 +64,7 @@ export default function SubscriptionForm({ onAdd }: Props) {
           placeholder="Service Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
         />
 
         <input
@@ -71,20 +73,20 @@ export default function SubscriptionForm({ onAdd }: Props) {
           placeholder="Cost"
           value={cost}
           onChange={(e) => setCost(e.target.value)}
-          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 placeholder:text-violet-200/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
         />
 
         <input
           type="date"
           value={billingDate}
           onChange={(e) => setBillingDate(e.target.value)}
-          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="border border-violet-300/35 rounded-lg bg-white/10 text-violet-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
         />
 
         <select
           value={recurrenceType}
           onChange={(e) => setRecurrenceType(e.target.value as "weekly" | "monthly" | "yearly")}
-          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+          className="border border-violet-300/35 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary bg-white/10 text-violet-50"
         >
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
@@ -92,9 +94,19 @@ export default function SubscriptionForm({ onAdd }: Props) {
         </select>
       </div>
 
+      <label className="mt-4 flex items-center gap-2 text-sm text-violet-100/90">
+        <input
+          type="checkbox"
+          checked={autoRenew}
+          onChange={(e) => setAutoRenew(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+        />
+        Auto renew
+      </label>
+
       <button
         type="submit"
-        className="mt-4 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition"
+        className="mt-5 inline-block bg-primary text-white px-3 py-1.5 rounded-lg text-sm hover:bg-primary-dark transition"
       >
         Add Subscription
       </button>

@@ -1,341 +1,322 @@
-/*
-Main App component 
-
-Resposnible for:
-- Managing the state of subscriptions
-- Handling tab switching (Dashboard / Subscriptions)
-- Managing auth state and backend API integration
-
-Notes:
-- Subscription data is loaded from the FastAPI backend after user login
-
-~ Osbaldo Mota
-*/
-
-import { useState, useEffect } from "react"
-import Layout from "./components/layout/Layout"
-import Navbar from "./components/layout/Navbar"
-import Card from "./components/ui/Card"
-import SubscriptionList from "./components/subscriptions/SubscriptionList"
-import type { Subscription } from "./types/Subscription"
-import WeeklySpendingChart from "./components/dashboard/WeeklySpendingChart"
-import UpcomingCharges from "./components/dashboard/UpcomingCharges"
-import AuthPanel from "./components/auth/AuthPanel"
-import {
-  calculateMonthlyExpenses,
-  calculateActiveSubscriptions,
-  calculateUpcomingChargesTotal,
-} from "./types/utils/financialUtils"
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./components/layout/Layout";
+import Navbar from "./components/layout/Navbar";
+import SubscriptionList from "./components/subscriptions/SubscriptionList";
+import type { Subscription } from "./types/Subscription";
+import Dashboard from "./screens/Dashboard";
+import Login from "./screens/Login";
+import Signup from "./screens/Signup";
+import ForgotPassword from "./screens/ForgotPassword";
+import { useAuth } from "./hooks/useAuth";
 import {
   createSubscription,
   deleteSubscription,
   getSubscriptions,
-  login,
-  logout,
-  signup,
   updateSubscription,
-} from "./api/client"
-
-interface AuthState {
-  token: string
-  email: string
-}
-
+  AuthError,
+} from "./api/client";
 
 export default function App() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-  const [auth, setAuth] = useState<AuthState | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [budget, setBudget] = useState<number | null>(null)
-
-  // The actuive tab states which controls Dashboard vs Subscriptions view
-  const [activeTab, setActiveTab] = useState<"dashboard" | "subscriptions">("dashboard")
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem("authToken")
-    const savedEmail = localStorage.getItem("authEmail")
-    if (savedToken && savedEmail) {
-      setAuth({ token: savedToken, email: savedEmail })
-    }
-
-    const savedBudget = localStorage.getItem("monthlyBudget")
+  const { auth, signOut } = useAuth();
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [budget, setBudget] = useState<number | null>(() => {
+    const savedBudget = localStorage.getItem("monthlyBudget");
     if (savedBudget) {
-      const parsedBudget = Number(savedBudget)
+      const parsedBudget = Number(savedBudget);
       if (!Number.isNaN(parsedBudget)) {
-        setBudget(parsedBudget)
+        return parsedBudget;
       }
     }
-  }, [])
+    return null;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    let rafId: number | null = null;
+    let targetX = 50;
+    let targetY = 50;
+    let leadX = 50;
+    let leadY = 50;
+    let trailX = 50;
+    let trailY = 50;
+    let leadVX = 0;
+    let leadVY = 0;
+    let trailVX = 0;
+    let trailVY = 0;
+
+    const animateCursorGlow = () => {
+      // Damped spring motion keeps a liquid feel without harsh snapping.
+      leadVX = leadVX * 0.86 + (targetX - leadX) * 0.09;
+      leadVY = leadVY * 0.86 + (targetY - leadY) * 0.09;
+      leadX += leadVX;
+      leadY += leadVY;
+
+      trailVX = trailVX * 0.88 + (leadX - trailX) * 0.08;
+      trailVY = trailVY * 0.88 + (leadY - trailY) * 0.08;
+      trailX += trailVX;
+      trailY += trailVY;
+
+      const pullX = leadX - trailX;
+      const pullY = leadY - trailY;
+      const pullDistance = Math.min(20, Math.hypot(pullX, pullY));
+      const leadSpeed = Math.min(12, Math.hypot(leadVX, leadVY));
+      const stretchX = Math.min(1.22, 1 + pullDistance / 60 + leadSpeed / 90);
+      const stretchY = Math.max(0.88, 1 - pullDistance / 80);
+      const angle = Math.atan2(leadVY, leadVX) * (180 / Math.PI);
+      const time = performance.now() / 1000;
+      const wobbleStrength = Math.min(
+        0.28,
+        pullDistance / 95 + leadSpeed / 120,
+      );
+      const wobbleX = Math.sin(time * 7) * wobbleStrength;
+      const wobbleY = Math.cos(time * 6.5) * wobbleStrength;
+      const energy = Math.min(0.22, pullDistance / 160 + leadSpeed / 80);
+
+      root.style.setProperty("--cursor-x", `${leadX + wobbleX}%`);
+      root.style.setProperty("--cursor-y", `${leadY + wobbleY}%`);
+      root.style.setProperty("--cursor-trail-x", `${trailX - wobbleX * 0.5}%`);
+      root.style.setProperty("--cursor-trail-y", `${trailY - wobbleY * 0.5}%`);
+      root.style.setProperty("--cursor-stretch-x", `${stretchX}`);
+      root.style.setProperty("--cursor-stretch-y", `${stretchY}`);
+      root.style.setProperty(
+        "--cursor-angle",
+        `${Number.isFinite(angle) ? angle : 0}deg`,
+      );
+      root.style.setProperty("--cursor-energy", `${energy}`);
+
+      rafId = window.requestAnimationFrame(animateCursorGlow);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      targetX = (event.clientX / window.innerWidth) * 100;
+      targetY = (event.clientY / window.innerHeight) * 100;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    rafId = window.requestAnimationFrame(animateCursorGlow);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
 
   const handleBudgetSave = (nextBudget: number) => {
-    setBudget(nextBudget)
-    localStorage.setItem("monthlyBudget", String(nextBudget))
-  }
+    setBudget(nextBudget);
+    localStorage.setItem("monthlyBudget", String(nextBudget));
+  };
 
   useEffect(() => {
     if (!auth) {
-      setSubscriptions([])
-      return
+      setSubscriptions([]);
+      return;
     }
 
     const loadSubscriptions = async () => {
       try {
-        setLoading(true)
-        setError(null)
-        const data = await getSubscriptions(auth.token)
-        setSubscriptions(data)
+        setLoading(true);
+        setError(null);
+        const data = await getSubscriptions(auth.token);
+        setSubscriptions(data);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Failed to load subscriptions")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void loadSubscriptions()
-  }, [auth])
-
-  const handleLogin = async (formData: { email: string; password: string }) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const session = await login(formData)
-
-      if (!session.access_token) {
-        throw new Error("Login did not return an access token")
-      }
-
-      const nextAuth = { token: session.access_token, email: formData.email }
-      localStorage.setItem("authToken", nextAuth.token)
-      localStorage.setItem("authEmail", nextAuth.email)
-      setAuth(nextAuth)
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Login failed")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSignup = async (formData: {
-    email: string
-    password: string
-    firstName: string
-    lastName: string
-  }) => {
-    try {
-      setLoading(true)
-      setError(null)
-      await signup(formData)
-
-      // Signup can succeed while immediate follow-up login briefly fails (for example due
-      // to a transient local network/CORS hiccup). Retry once, then surface a clear message.
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          const session = await login({ email: formData.email, password: formData.password })
-
-          if (!session.access_token) {
-            throw new Error("Login did not return an access token")
-          }
-
-          const nextAuth = { token: session.access_token, email: formData.email }
-          localStorage.setItem("authToken", nextAuth.token)
-          localStorage.setItem("authEmail", nextAuth.email)
-          setAuth(nextAuth)
-          return
-        } catch (requestError) {
-          const isNetworkIssue = requestError instanceof Error && requestError.message.startsWith("Network error:")
-          if (isNetworkIssue && attempt === 0) {
-            await new Promise((resolve) => setTimeout(resolve, 700))
-            continue
-          }
-
-          setError("Account created successfully. Please log in with your new account.")
-          return
+        if (requestError instanceof AuthError) {
+          void signOut();
+        } else {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Failed to load subscriptions",
+          );
         }
+      } finally {
+        setLoading(false);
       }
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Signup failed")
-    }
-    setLoading(false)
-  }
+    };
 
-  const handleLogout = async () => {
+    void loadSubscriptions();
+  }, [auth, signOut]);
+
+  const handleAdd = async (
+    newSubscription: Omit<Subscription, "subscriptionId">,
+  ) => {
     if (!auth) {
-      return
+      return;
     }
 
     try {
-      await logout(auth.token)
-    } catch {
-      // Clear local session even if server-side logout fails.
-    }
-
-    localStorage.removeItem("authToken")
-    localStorage.removeItem("authEmail")
-    setAuth(null)
-  }
-
-  const handleAdd = async (newSubscription: Omit<Subscription, "subscriptionId">) => {
-    if (!auth) {
-      return
-    }
-
-    try {
-      setError(null)
+      setError(null);
       const created = await createSubscription(auth.token, {
         serviceName: newSubscription.serviceName,
         cost: newSubscription.cost,
         billingDate: newSubscription.billingDate,
         recurrenceType: newSubscription.recurrenceType,
-      })
-      setSubscriptions((prev) => [...prev, created])
+        autoRenew: newSubscription.autoRenew,
+      });
+      setSubscriptions((prev) => [...prev, created]);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Failed to add subscription")
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to add subscription",
+        );
+      }
     }
-  }
+  };
 
   const handleDelete = async (subscriptionId: number) => {
     if (!auth) {
-      return
+      return;
     }
 
     try {
-      setError(null)
-      await deleteSubscription(auth.token, subscriptionId)
-      setSubscriptions((prev) => prev.filter((sub) => sub.subscriptionId !== subscriptionId))
+      setError(null);
+      await deleteSubscription(auth.token, subscriptionId);
+      setSubscriptions((prev) =>
+        prev.filter((sub) => sub.subscriptionId !== subscriptionId),
+      );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Failed to delete subscription")
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to delete subscription",
+        );
+      }
     }
-  }
+  };
 
-  const getNextBillingDate = (recurrenceType: Subscription["recurrenceType"]) => {
-    const nextDate = new Date()
+  const getNextBillingDate = (
+    recurrenceType: Subscription["recurrenceType"],
+  ) => {
+    const nextDate = new Date();
 
     if (recurrenceType === "weekly") {
-      nextDate.setDate(nextDate.getDate() + 7)
+      nextDate.setDate(nextDate.getDate() + 7);
     } else if (recurrenceType === "yearly") {
-      nextDate.setFullYear(nextDate.getFullYear() + 1)
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
     } else {
-      nextDate.setMonth(nextDate.getMonth() + 1)
+      nextDate.setMonth(nextDate.getMonth() + 1);
     }
 
-    return nextDate.toISOString().slice(0, 10)
-  }
+    return nextDate.toISOString().slice(0, 10);
+  };
 
   const handleCancel = async (subscriptionId: number) => {
     if (!auth) {
-      return
+      return;
     }
 
     try {
-      setError(null)
-      const updated = await updateSubscription(auth.token, subscriptionId, { autoRenew: false })
-      setSubscriptions((prev) => prev.map((sub) => (sub.subscriptionId === subscriptionId ? updated : sub)))
+      setError(null);
+      const updated = await updateSubscription(auth.token, subscriptionId, {
+        autoRenew: false,
+      });
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.subscriptionId === subscriptionId ? updated : sub,
+        ),
+      );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Failed to cancel subscription")
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to cancel subscription",
+        );
+      }
     }
-  }
+  };
 
   const handleEnableAutoRenew = async (subscriptionId: number) => {
     if (!auth) {
-      return
+      return;
     }
 
     try {
-      setError(null)
-      const updated = await updateSubscription(auth.token, subscriptionId, { autoRenew: true })
-      setSubscriptions((prev) => prev.map((sub) => (sub.subscriptionId === subscriptionId ? updated : sub)))
+      setError(null);
+      const updated = await updateSubscription(auth.token, subscriptionId, {
+        autoRenew: true,
+      });
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.subscriptionId === subscriptionId ? updated : sub,
+        ),
+      );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Failed to enable auto renew")
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to enable auto renew",
+        );
+      }
     }
-  }
+  };
 
   const handleRenew = async (subscriptionId: number) => {
     if (!auth) {
-      return
+      return;
     }
 
-    const target = subscriptions.find((sub) => sub.subscriptionId === subscriptionId)
+    const target = subscriptions.find(
+      (sub) => sub.subscriptionId === subscriptionId,
+    );
     if (!target) {
-      return
+      return;
     }
 
     try {
-      setError(null)
+      setError(null);
       const updated = await updateSubscription(auth.token, subscriptionId, {
         autoRenew: true,
         billingDate: getNextBillingDate(target.recurrenceType),
-      })
-      setSubscriptions((prev) => prev.map((sub) => (sub.subscriptionId === subscriptionId ? updated : sub)))
+      });
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.subscriptionId === subscriptionId ? updated : sub,
+        ),
+      );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Failed to renew subscription")
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to renew subscription",
+        );
+      }
     }
-  }
-
-  // Dynamic dashboard metrics based on subscription data
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const isPastSubscription = (sub: Subscription) => {
-    const billingDate = new Date(sub.billingDate)
-    billingDate.setHours(0, 0, 0, 0)
-    return !sub.autoRenew && billingDate < today
-  }
-
-  const subscriptionCostItems = subscriptions.filter((sub) => !isPastSubscription(sub))
-  const monthlyExpenses = calculateMonthlyExpenses(subscriptionCostItems)
-  const activeSubscriptions = calculateActiveSubscriptions(subscriptions.filter((sub) => !isPastSubscription(sub)))
-  const upcomingChargesTotal = calculateUpcomingChargesTotal(subscriptions)
-  const activeSubscriptionItems = subscriptions.filter((sub) => sub.isActive && !isPastSubscription(sub))
-  const upcomingRenewals = subscriptions
-    .filter((sub) => new Date(sub.billingDate) >= new Date())
-    .sort((a, b) => new Date(a.billingDate).getTime() - new Date(b.billingDate).getTime())
-
-  const formatRenewalDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const day = String(date.getDate()).padStart(2, "0")
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const year = date.getFullYear()
-    return `${month}/${day}/${year}`
-  }
-
-  const formatRecurringCost = (sub: Subscription) => {
-    if (sub.recurrenceType === "yearly") {
-      const monthlyEquivalent = sub.cost / 12
-      return `$${sub.cost.toFixed(2)} / year ($${monthlyEquivalent.toFixed(2)} / month)`
-    }
-
-    if (sub.recurrenceType === "weekly") {
-      const monthlyEquivalent = (sub.cost * 52) / 12
-      return `$${sub.cost.toFixed(2)} / week (~$${monthlyEquivalent.toFixed(2)} / month)`
-    }
-
-    return `$${sub.cost.toFixed(2)} / month`
-  }
-
-  const budgetUsageRatio = budget && budget > 0 ? monthlyExpenses / budget : null
-  const budgetValueClassName = budgetUsageRatio === null
-    ? "text-gray-900"
-    : budgetUsageRatio < 0.5
-      ? "text-emerald-600"
-      : budgetUsageRatio < 0.9
-        ? "text-amber-500"
-        : "text-red-600"
+  };
 
   if (!auth) {
-    return <AuthPanel onLogin={handleLogin} onSignup={handleSignup} loading={loading} error={error} />
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   return (
     <>
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onLogout={handleLogout}
-        userEmail={auth.email}
-        budget={budget}
-        onSaveBudget={handleBudgetSave}
-      />
+      <Navbar budget={budget} onSaveBudget={handleBudgetSave} />
 
       <Layout>
         {error && (
@@ -344,146 +325,31 @@ export default function App() {
           </p>
         )}
 
-        {loading && (
-          <p className="mb-4 text-sm text-gray-500">Loading...</p>
-        )}
+        {loading && <p className="mb-4 text-sm text-gray-500">Loading...</p>}
 
-        {activeTab === "dashboard" && (
-          <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Dashboard Overview
-              </h2>
-              <p className="text-gray-500 text-sm mt-1">
-                Here’s a summary of your financial activity.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-4 gap-6">
-            <div className="relative group">
-              <Card
-                title="Monthly Subscription Cost"
-                value={`$${monthlyExpenses.toFixed(2)}`}
-              />
-
-              <div className="pointer-events-none absolute left-0 right-0 top-full mt-2 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg opacity-0 translate-y-1 transition duration-200 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:pointer-events-auto">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Subscription Costs
-                </p>
-
-                {subscriptionCostItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">No subscriptions yet.</p>
-                ) : (
-                  <div className="max-h-56 space-y-2 overflow-y-auto">
-                    {subscriptionCostItems.map((sub) => (
-                      <div
-                        key={sub.subscriptionId}
-                        className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
-                      >
-                        <p className="text-sm font-semibold text-gray-900">{sub.serviceName}</p>
-                        <p className="text-xs text-gray-600">{formatRecurringCost(sub)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="relative group">
-              <Card
-                title="Active Subscriptions"
-                value={`${activeSubscriptions}`}
-              />
-
-              <div className="pointer-events-none absolute left-0 right-0 top-full mt-2 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg opacity-0 translate-y-1 transition duration-200 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:pointer-events-auto">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Active Subscriptions
-                </p>
-
-                {activeSubscriptionItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">No active subscriptions yet.</p>
-                ) : (
-                  <div className="max-h-56 space-y-2 overflow-y-auto">
-                    {activeSubscriptionItems.map((sub) => {
-                      const isEndingSoon = !sub.autoRenew
-
-                      return (
-                        <div
-                          key={sub.subscriptionId}
-                          className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 flex items-center justify-between gap-3"
-                        >
-                          <p className="text-sm font-semibold text-gray-900">{sub.serviceName}</p>
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              isEndingSoon ? "bg-yellow-100 text-yellow-700" : "bg-emerald-100 text-emerald-700"
-                            }`}
-                          >
-                            {isEndingSoon ? "Ending Soon" : "Active"}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="relative group">
-              <Card
-                title="Upcoming Charges"
-                value={`$${upcomingChargesTotal.toFixed(2)}`}
-              />
-
-              <div className="pointer-events-none absolute left-0 right-0 top-full mt-2 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg opacity-0 translate-y-1 transition duration-200 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:pointer-events-auto">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Upcoming Renewals
-                </p>
-
-                {upcomingRenewals.length === 0 ? (
-                  <p className="text-sm text-gray-500">No upcoming renewals.</p>
-                ) : (
-                  <div className="max-h-56 space-y-2 overflow-y-auto">
-                    {upcomingRenewals.map((sub) => (
-                      <div
-                        key={sub.subscriptionId}
-                        className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
-                      >
-                        <p className="text-sm font-semibold text-gray-900">{sub.serviceName}</p>
-                        <p className="text-xs text-gray-600">Renewal date: {formatRenewalDate(sub.billingDate)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Card
-              title="Monthly Budget"
-              value={budget !== null ? `$${budget.toFixed(2)}` : "Not set"}
-              valueClassName={budgetValueClassName}
-            />
-          </div>
-            
-            <div className="mt-10 grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-            <WeeklySpendingChart subscriptions={subscriptions} />
-            </div>
-
-          <UpcomingCharges subscriptions={subscriptions} />
-          </div>
-          </>
-        )}
-
-        {activeTab === "subscriptions" && (
-          <SubscriptionList
-            subscriptions={subscriptions}
-            onDelete={handleDelete}
-            onAdd={handleAdd}
-            onCancel={handleCancel}
-            onEnableAutoRenew={handleEnableAutoRenew}
-            onRenew={handleRenew}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Dashboard subscriptions={subscriptions} budget={budget} />
+            }
           />
-        )}
+          <Route
+            path="/subscriptions"
+            element={
+              <SubscriptionList
+                subscriptions={subscriptions}
+                onDelete={handleDelete}
+                onAdd={handleAdd}
+                onCancel={handleCancel}
+                onEnableAutoRenew={handleEnableAutoRenew}
+                onRenew={handleRenew}
+              />
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </Layout>
     </>
-  )
+  );
 }
