@@ -2,116 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-	--wave-bg: #09000f;
-	--wave-core: #4a0f7d;
-	--wave-bright: #a62bff;
-	--wave-glow: #7f1fd1;
-	--cursor-x: 50%;
-	--cursor-y: 50%;
-	--cursor-trail-x: 50%;
-	--cursor-trail-y: 50%;
-	--cursor-stretch-x: 1;
-	--cursor-stretch-y: 1;
-	--cursor-angle: 0deg;
-	--cursor-energy: 0.1;
-}
-
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 html,
 body,
 #root {
-	min-height: 100%;
+  min-height: 100%;
 }
 
 body {
-	margin: 0;
-	background: var(--wave-bg);
-	color: #e8e2f2;
-	overflow-x: hidden;
+  margin: 0;
+  background: #f9fafb;
+  color: #111827;
+  overflow-x: hidden;
 }
 
 #root {
-	position: relative;
-	z-index: 1;
-}
-
-body::before {
-	content: "";
-	position: fixed;
-	inset: -20%;
-	z-index: -2;
-	background-color: var(--wave-bg);
-	background-image:
-		radial-gradient(150% 78% at 50% -26%, rgba(174, 61, 255, 0.72) 0%, rgba(102, 24, 166, 0.52) 26%, rgba(20, 6, 36, 0) 66%),
-		radial-gradient(145% 76% at 46% 122%, rgba(132, 40, 220, 0.52) 0%, rgba(54, 14, 90, 0.34) 30%, rgba(14, 4, 28, 0) 70%),
-		linear-gradient(115deg, rgba(166, 43, 255, 0.2) 0%, rgba(69, 19, 115, 0.14) 36%, rgba(9, 0, 15, 0.36) 100%);
-	background-size: 190% 190%, 170% 170%, 150% 150%;
-	background-position: 34% 42%, 66% 58%, 50% 50%;
-	filter: saturate(125%) contrast(112%);
-	will-change: transform, background-position;
-	animation: waveFlow 4.8s ease-in-out infinite alternate, waveSlide 8s linear infinite;
-}
-
-body::after {
-	content: "";
-	position: fixed;
-	inset: -8%;
-	z-index: -1;
-	pointer-events: none;
-	background:
-		radial-gradient(
-			calc(22rem * var(--cursor-stretch-x)) calc(20rem * var(--cursor-stretch-y))
-			at var(--cursor-x) var(--cursor-y),
-			rgb(196 98 255 / calc(0.18 + var(--cursor-energy))),
-			rgb(196 98 255 / calc(0.08 + var(--cursor-energy) * 0.5)) 26%,
-			transparent 62%
-		),
-		radial-gradient(
-			calc(15rem * var(--cursor-stretch-y)) calc(22rem * var(--cursor-stretch-x))
-			at var(--cursor-trail-x) var(--cursor-trail-y),
-			rgba(120, 40, 206, 0.2),
-			rgba(120, 40, 206, 0.08) 30%,
-			transparent 68%
-		),
-		radial-gradient(82% 66% at 18% 22%, rgba(166, 43, 255, 0.4), transparent 74%),
-		radial-gradient(84% 68% at 78% 74%, rgba(127, 31, 209, 0.34), transparent 76%),
-		radial-gradient(110% 95% at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.55) 100%);
-	will-change: transform, opacity, background-position;
-	animation: glowShift 6s ease-in-out infinite alternate;
-}
-
-@keyframes waveFlow {
-	0% {
-		transform: translate3d(0, 0, 0) scale(1.01) rotate(0deg);
-	}
-	100% {
-		transform: translate3d(-3.2%, 2.4%, 0) scale(1.09) rotate(-0.7deg);
-	}
-}
-
-@keyframes waveSlide {
-	0% {
-		background-position: 20% 36%, 78% 66%, 50% 50%;
-	}
-	50% {
-		background-position: 68% 62%, 30% 40%, 42% 58%;
-	}
-	100% {
-		background-position: 20% 36%, 78% 66%, 50% 50%;
-	}
-}
-
-@keyframes glowShift {
-	0% {
-		opacity: 0.82;
-		transform: translate3d(0, 0, 0) scale(1);
-	}
-	100% {
-		opacity: 1;
-		transform: translate3d(2.2%, -1.8%, 0) scale(1.06);
-	}
+  position: relative;
+  z-index: 1;
 }

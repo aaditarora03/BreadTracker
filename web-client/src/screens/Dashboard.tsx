@@ -147,7 +147,7 @@ export default function Dashboard({ subscriptions, budget }: Props) {
     budget && budget > 0 ? monthlyExpenses / budget : null;
   const budgetValueClassName =
     budgetUsageRatio === null
-      ? "text-violet-50"
+      ? "text-gray-900"
       : budgetUsageRatio < 0.5
         ? "text-emerald-600"
         : budgetUsageRatio < 0.9
@@ -157,17 +157,17 @@ export default function Dashboard({ subscriptions, budget }: Props) {
   return (
     <>
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-violet-50">
+        <h2 className="text-2xl font-semibold text-gray-900">
           Dashboard Overview
         </h2>
-        <p className="text-violet-200/80 text-sm mt-1">
+        <p className="text-gray-500 text-sm mt-1">
           Here’s a summary of your financial activity.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-4">
           <div>
             <label
               htmlFor="spending-display-mode"
-              className="mr-2 text-sm font-medium text-violet-100/90"
+              className="mr-2 text-sm font-medium text-gray-700"
             >
               Display:
             </label>
@@ -179,7 +179,7 @@ export default function Dashboard({ subscriptions, budget }: Props) {
                   event.target.value as SpendingDisplayMode,
                 )
               }
-              className="rounded-lg border border-violet-300/35 bg-[rgba(26,12,44,0.75)] px-3 py-2 text-sm text-violet-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="bar">Bar chart</option>
               <option value="calendar">Calendar</option>
@@ -188,7 +188,7 @@ export default function Dashboard({ subscriptions, budget }: Props) {
           <div>
             <label
               htmlFor="spending-period"
-              className="mr-2 text-sm font-medium text-violet-100/90"
+              className="mr-2 text-sm font-medium text-gray-700"
             >
               Spending view:
             </label>
@@ -198,7 +198,7 @@ export default function Dashboard({ subscriptions, budget }: Props) {
               onChange={(event) =>
                 setSpendingPeriod(event.target.value as SpendingPeriod)
               }
-              className="rounded-lg border border-violet-300/35 bg-[rgba(26,12,44,0.75)] px-3 py-2 text-sm text-violet-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -219,26 +219,24 @@ export default function Dashboard({ subscriptions, budget }: Props) {
             value={`$${selectedPeriodSpending.toFixed(2)}`}
           />
           <div
-            className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-violet-300/25 bg-[rgba(22,10,38,0.95)] p-3 shadow-[0_16px_45px_rgba(7,0,18,0.62)] transition duration-200 ${openPopup === "costs" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}
+            className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-xl transition duration-200 ${openPopup === "costs" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}
           >
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-200/75">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
               Subscription Costs
             </p>
             {subscriptionCostItems.length === 0 ? (
-              <p className="text-sm text-violet-200/80">
-                No subscriptions yet.
-              </p>
+              <p className="text-sm text-gray-500">No subscriptions yet.</p>
             ) : (
               <div className="max-h-56 space-y-2 overflow-y-auto">
                 {subscriptionCostItems.map((sub) => (
                   <div
                     key={sub.subscriptionId}
-                    className="rounded-lg border border-violet-300/20 bg-white/10 px-3 py-2"
+                    className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
                   >
-                    <p className="text-sm font-semibold text-violet-50">
+                    <p className="text-sm font-semibold text-gray-900">
                       {sub.serviceName}
                     </p>
-                    <p className="text-xs text-violet-200/80">
+                    <p className="text-xs text-gray-500">
                       {formatRecurringCost(sub)}
                     </p>
                   </div>
@@ -255,13 +253,13 @@ export default function Dashboard({ subscriptions, budget }: Props) {
         >
           <Card title="Active Subscriptions" value={`${activeSubscriptions}`} />
           <div
-            className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-violet-300/25 bg-[rgba(22,10,38,0.95)] p-3 shadow-[0_16px_45px_rgba(7,0,18,0.62)] transition duration-200 ${openPopup === "active" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}
+            className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-xl transition duration-200 ${openPopup === "active" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}
           >
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-200/75">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
               Active Subscriptions
             </p>
             {activeSubscriptionItems.length === 0 ? (
-              <p className="text-sm text-violet-200/80">
+              <p className="text-sm text-gray-500">
                 No active subscriptions yet.
               </p>
             ) : (
@@ -271,9 +269,9 @@ export default function Dashboard({ subscriptions, budget }: Props) {
                   return (
                     <div
                       key={sub.subscriptionId}
-                      className="rounded-lg border border-violet-300/20 bg-white/10 px-3 py-2 flex items-center justify-between gap-3"
+                      className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 flex items-center justify-between gap-3"
                     >
-                      <p className="text-sm font-semibold text-violet-50">
+                      <p className="text-sm font-semibold text-gray-900">
                         {sub.serviceName}
                       </p>
                       <span
@@ -299,10 +297,10 @@ export default function Dashboard({ subscriptions, budget }: Props) {
             value={`$${upcomingChargesTotal.toFixed(2)}`}
           />
           <div
-            className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-violet-300/25 bg-[rgba(22,10,38,0.95)] p-3 shadow-[0_16px_45px_rgba(7,0,18,0.62)] transition duration-200 ${openPopup === "renewals" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}
+            className={`absolute left-0 right-0 top-full mt-0 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-xl transition duration-200 ${openPopup === "renewals" ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-1"}`}
           >
             <div className="mb-3 space-y-2">
-              <p className="text-sm font-semibold text-violet-100/95">
+              <p className="text-sm font-semibold text-gray-900">
                 Upcoming Renewals
               </p>
               <div className="flex items-center gap-1">
@@ -310,7 +308,7 @@ export default function Dashboard({ subscriptions, budget }: Props) {
                   type="button"
                   onClick={goToPreviousRenewalMonth}
                   disabled={isAtEarliestRenewalMonth}
-                  className={`rounded border px-1.5 py-0.5 text-[11px] ${isAtEarliestRenewalMonth ? "cursor-not-allowed border-violet-300/20 bg-white/5 text-violet-200/35" : "border-violet-300/35 bg-white/10 text-violet-100/95 hover:bg-white/20"}`}
+                  className={`rounded border px-1.5 py-0.5 text-[11px] ${isAtEarliestRenewalMonth ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400" : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"}`}
                 >
                   Prev
                 </button>
@@ -321,7 +319,7 @@ export default function Dashboard({ subscriptions, budget }: Props) {
                       new Date(renewalMonthYear, Number(event.target.value), 1),
                     )
                   }
-                  className="w-24 rounded border border-violet-300/35 bg-white/10 px-1.5 py-0.5 text-[11px] text-violet-100/95"
+                  className="w-24 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700 focus:outline-none focus:border-transparent focus:ring-1 focus:ring-primary"
                 >
                   {monthNames.map((monthName, index) => (
                     <option key={monthName} value={index}>
@@ -329,33 +327,31 @@ export default function Dashboard({ subscriptions, budget }: Props) {
                     </option>
                   ))}
                 </select>
-                <span className="rounded border border-violet-300/35 bg-white/10 px-1.5 py-0.5 text-[11px] text-violet-100/95">
+                <span className="rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700">
                   {renewalMonthYear}
                 </span>
                 <button
                   type="button"
                   onClick={goToNextRenewalMonth}
-                  className="rounded border border-violet-300/35 bg-white/10 px-1.5 py-0.5 text-[11px] text-violet-100/95 hover:bg-white/20"
+                  className="rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700 hover:bg-gray-50"
                 >
                   Next
                 </button>
               </div>
             </div>
             {upcomingRenewals.length === 0 ? (
-              <p className="text-sm text-violet-200/80">
-                No upcoming renewals.
-              </p>
+              <p className="text-sm text-gray-500">No upcoming renewals.</p>
             ) : (
               <div className="max-h-56 space-y-2 overflow-y-auto">
                 {upcomingRenewals.map(({ sub, occurrenceDate }) => (
                   <div
                     key={sub.subscriptionId}
-                    className="rounded-lg border border-violet-300/20 bg-white/10 px-3 py-2"
+                    className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
                   >
-                    <p className="text-sm font-semibold text-violet-50">
+                    <p className="text-sm font-semibold text-gray-900">
                       {sub.serviceName}
                     </p>
-                    <p className="text-xs text-violet-200/80">
+                    <p className="text-xs text-gray-500">
                       Renewal date: {formatRenewalDate(occurrenceDate)}
                     </p>
                   </div>
