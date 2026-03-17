@@ -110,7 +110,7 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-4 text-sm">
+        <div className="mt-4 text-sm flex justify-center">
           <Link to="/signup" className="text-primary hover:underline">
             Need an account? Sign up
           </Link>

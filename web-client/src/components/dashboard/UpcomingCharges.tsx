@@ -29,27 +29,31 @@ export default function UpcomingCharges({ subscriptions }: Props) {
       </div>
 
       <div className="space-y-4">
-        {sorted.slice(0, 4).map(({ sub, nextBillingDate }) => {
-          const daysLeft = getDaysLeftFromDate(nextBillingDate);
-          const dueText =
-            daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} days`;
+        {sorted.length === 0 ? (
+          <p className="text-sm text-gray-500">No upcoming charges.</p>
+        ) : (
+          sorted.slice(0, 4).map(({ sub, nextBillingDate }) => {
+            const daysLeft = getDaysLeftFromDate(nextBillingDate);
+            const dueText =
+              daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} days`;
 
-          return (
-            <div
-              key={sub.subscriptionId}
-              className="flex justify-between items-center"
-            >
-              <div>
-                <p className="font-medium text-gray-900">{sub.serviceName}</p>
-                <p className="text-sm text-gray-500">{dueText}</p>
+            return (
+              <div
+                key={sub.subscriptionId}
+                className="flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-medium text-gray-900">{sub.serviceName}</p>
+                  <p className="text-sm text-gray-500">{dueText}</p>
+                </div>
+
+                <p className="font-semibold text-gray-700">
+                  ${sub.cost.toFixed(2)}
+                </p>
               </div>
-
-              <p className="font-semibold text-gray-700">
-                ${sub.cost.toFixed(2)}
-              </p>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

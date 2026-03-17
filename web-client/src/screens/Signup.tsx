@@ -47,8 +47,25 @@ export default function Signup() {
     try {
       await signUp({ email, password, firstName, lastName });
       navigate("/");
-    } catch {
-      // error is handled by context
+    } catch (err) {
+      // If the server error is about the email address (e.g. domain doesn't exist /
+      // no MX records), show it inline on the email field instead of the generic banner.
+      const message = err instanceof Error ? err.message : "";
+      const isEmailError =
+        message.toLowerCase().includes("email") ||
+        message.toLowerCase().includes("domain") ||
+        message.toLowerCase().includes("deliverable") ||
+        message.toLowerCase().includes("address");
+      if (isEmailError) {
+        clearError(); // don't show the duplicate generic banner
+        setValidationErrors((prev) => ({
+          ...prev,
+          email:
+            "The email address you entered doesn't exist. Please use a real email.",
+        }));
+      }
+      // For all other errors (e.g. email already registered), the context's
+      // error state is shown via the existing error banner below the form.
     }
   };
 

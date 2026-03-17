@@ -53,12 +53,30 @@ def login(email, password):
     except Exception as e:
         return f"Login failed: {str(e)}"
 
-def reset_password(new_password):
+def exchange_code(code: str):
+    """Exchange a Supabase PKCE recovery code for a session."""
     config_error = _require_supabase_client()
     if config_error:
         return config_error
 
     try:
+        res = supabase.auth.exchange_code_for_session({"auth_code": code})
+        return res
+    except AuthApiError as e:
+        return f"Code exchange failed: {e.message}"
+    except Exception as e:
+        return f"Code exchange failed: {str(e)}"
+
+
+def reset_password(new_password, access_token: str):
+    """Update password for the user identified by access_token."""
+    config_error = _require_supabase_client()
+    if config_error:
+        return config_error
+
+    try:
+        # Set the user's session so update_user runs as that user.
+        supabase.auth.set_session(access_token, access_token)
         return supabase.auth.update_user({"password": new_password})
     except AuthApiError as e:
         return f"Update failed: {e.message}"

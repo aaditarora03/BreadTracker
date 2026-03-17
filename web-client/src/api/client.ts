@@ -191,6 +191,27 @@ export async function signup(payload: SignupPayload): Promise<void> {
   })
 }
 
+export async function exchangeCode(code: string): Promise<AuthSession> {
+  return request<AuthSession>("/auth/exchange-code", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  })
+}
+
+export async function resetPassword(
+  newPassword: string,
+  token: string,
+): Promise<void> {
+  await request(
+    "/auth/reset-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ newPassword }),
+    },
+    token,
+  )
+}
+
 export async function login(payload: LoginPayload): Promise<AuthSession> {
   return request<AuthSession>("/auth/login", {
     method: "POST",
