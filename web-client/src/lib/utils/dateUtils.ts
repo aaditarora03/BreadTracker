@@ -6,7 +6,8 @@
  * ~ Osbaldo Mota
  */
 
-import type { Subscription } from "../Subscription"
+import type { Subscription } from "../../types/Subscription"
+
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24
 
@@ -126,10 +127,10 @@ export function getDaysLeftFromDate(targetDate: Date, referenceDate: Date = new 
   return Math.ceil(diffTime / DAY_IN_MS)
 }
 
-export function getDaysLeftForSubscription(subscription: Subscription, referenceDate: Date = new Date()): number | null {
+export function getDaysLeftForSubscription(subscription: Subscription, referenceDate: Date = new Date()) {
   const nextBillingDate = getNextBillingDateForSubscription(subscription, referenceDate)
   if (!nextBillingDate) {
-    return null
+    return undefined
   }
 
   return getDaysLeftFromDate(nextBillingDate, referenceDate)

@@ -8,6 +8,8 @@ flask
 sqlmodel
 alembic
 psycopg2-binary
+email-validator
+dnspython
 
 pytest
 httpx

@@ -17,12 +17,14 @@ interface Props {
 }
 
 export default function SubscriptionForm({ onAdd }: Props) {
-  const [name, setName] = useState("")
-  const [cost, setCost] = useState("")
-  const [billingDate, setBillingDate] = useState("")
-  const [recurrenceType, setRecurrenceType] = useState<"weekly" | "monthly" | "yearly">("monthly")
-  const [autoRenew, setAutoRenew] = useState(true)
-  const [emailReminder, setEmailReminder] = useState(false)
+  const [name, setName] = useState("");
+  const [cost, setCost] = useState("");
+  const [billingDate, setBillingDate] = useState("");
+  const [recurrenceType, setRecurrenceType] = useState<
+    "weekly" | "monthly" | "yearly"
+  >("monthly");
+  const [autoRenew, setAutoRenew] = useState(true);
+  const [emailReminder, setEmailReminder] = useState(false);
 
   // Handles form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,18 +45,18 @@ export default function SubscriptionForm({ onAdd }: Props) {
     await onAdd(newSubscription);
 
     if (emailReminder) {
-        await fetch("http://127.0.0.1:8000/send-test-email", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-            body: JSON.stringify({
-                service_name: name,
-                cost: parseFloat(cost),
-            })
-        })
-     }
+      await fetch("http://127.0.0.1:8000/send-test-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+        body: JSON.stringify({
+          service_name: name,
+          cost: parseFloat(cost),
+        }),
+      });
+    }
     // Clears form
     setName("");
     setCost("");
@@ -120,14 +122,14 @@ export default function SubscriptionForm({ onAdd }: Props) {
         Auto renew
       </label>
 
-      <label className="mt-2 flex items-center gap-2 text-sm text-violet-100/90">
-              <input
-                  type="checkbox"
-                  checked={emailReminder}
-                  onChange={(e) => setEmailReminder(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              Receive email reminders
+      <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={emailReminder}
+          onChange={(e) => setEmailReminder(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+        />
+        Receive email reminders
       </label>
 
       <button

@@ -15,7 +15,7 @@ BreadTracker is a full-stack app with:
 ## 1. Clone
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/SirNacho/BreadTracker.git
 cd BreadTracker
 ```
 
@@ -39,14 +39,10 @@ SUPABASE_API_KEY=<supabase-anon-or-service-role-key>
 
 Run database migrations:
 
-```bash
-alembic upgrade head
-```
-
 Start backend API:
 
 ```bash
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+fastapi dev main.py
 ```
 
 Backend health check:

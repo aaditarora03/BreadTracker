@@ -6,5 +6,5 @@ export interface Subscription {
   recurrenceType: "weekly" | "monthly" | "yearly"
   autoRenew: boolean
   isActive: boolean
-  emailReminder: boolean
+  emailReminder?: boolean
 }
