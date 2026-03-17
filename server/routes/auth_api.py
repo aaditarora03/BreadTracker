@@ -1,11 +1,13 @@
+import os
+
 from models import Profile
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlmodel import Session
 
 from db import get_session
-from schemas import UserSignup, UserLogin, PasswordUpdate
-from services.auth_service import signup, login, reset_password, logout
+from schemas import UserSignup, UserLogin, PasswordUpdate, ForgotPasswordRequest, CodeExchangeRequest
+from services.auth_service import signup, login, reset_password, logout, request_password_reset, exchange_code
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
@@ -47,10 +49,39 @@ async def auth_login(user: UserLogin):
     return result.session
 
 
-# TODO: Finish when working on reset password screen
+@router.post("/forgot-password")
+async def auth_forgot_password(data: ForgotPasswordRequest):
+    redirect_to = os.getenv("PASSWORD_RESET_REDIRECT_URL")
+    result = request_password_reset(data.email, redirect_to=redirect_to)
+
+    if isinstance(result, str):
+        if "not configured" in result.lower():
+            raise HTTPException(status_code=500, detail=result)
+        raise HTTPException(status_code=400, detail=result)
+
+    return {"message": "If an account exists for this email, a reset link has been sent."}
+
+
+@router.post("/exchange-code")
+async def auth_exchange_code(data: CodeExchangeRequest):
+    """Exchange a Supabase PKCE recovery code for a session (used after password-reset email link)."""
+    result = exchange_code(data.code)
+    if isinstance(result, str):
+        raise HTTPException(status_code=400, detail=result)
+    # Return the session so the frontend can use the access token.
+    return result.session
+
+
 @router.post("/reset-password")
-async def auth_reset_password(data: PasswordUpdate):
-    result = reset_password(data.new_password)
+async def auth_reset_password(
+    data: PasswordUpdate,
+    authorization: str = Header(..., alias="Authorization"),
+):
+    """Update the authenticated user's password. Requires Bearer token from exchange-code step."""
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Bearer token required")
+    token = authorization[len("bearer "):].strip()
+    result = reset_password(data.new_password, token)
     if isinstance(result, str):
         raise HTTPException(status_code=400, detail=result)
     return {"message": "Password updated"}

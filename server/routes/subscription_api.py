@@ -9,14 +9,17 @@ router = APIRouter(prefix='/subscription', tags=['Subscriptions'])
 
 @router.get('/')
 def get_subscriptions(session: Session = Depends(get_session), user = Depends(get_user)):
-    statement = select(Subscription).where(Subscription.user_id == user.id)
+    statement = select(Subscription).where(
+        Subscription.user_id == user.id,
+        Subscription.is_active == True,
+    )
     return session.exec(statement).all()
 
-@router.get('/{id}')
-def get_subscription(id: int, session: Session = Depends(get_session), user = Depends(get_user)):
-    subscription = session.get(Subscription, id)
+@router.get('/{subscription_id}')
+def get_subscription(subscription_id: int, session: Session = Depends(get_session), user = Depends(get_user)):
+    subscription = session.get(Subscription, subscription_id)
     
-    if not subscription or str(subscription.user_id) != user.id:
+    if not subscription or str(subscription.user_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Subscription not found or unauthorized")
         
     return subscription
@@ -35,11 +38,11 @@ def create_subscription(request: CreateSubscriptionRequest, session: Session = D
     
     return subscription
 
-@router.post('/update/{id}')
-def update_subscription(id: int, request: UpdateSubscriptionRequest, session: Session = Depends(get_session), user = Depends(get_user)):
-    subscription = session.get(Subscription, id)
+@router.post('/update/{subscription_id}')
+def update_subscription(subscription_id: int, request: UpdateSubscriptionRequest, session: Session = Depends(get_session), user = Depends(get_user)):
+    subscription = session.get(Subscription, subscription_id)
     
-    if not subscription or str(subscription.user_id) != user.id:
+    if not subscription or str(subscription.user_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Subscription not found or unauthorized")
     
     update_data = request.model_dump(exclude_unset=True)
@@ -55,18 +58,20 @@ def update_subscription(id: int, request: UpdateSubscriptionRequest, session: Se
     
     return subscription
 
-@router.delete('/delete/{id}')
-def delete_subscription(id: int, session: Session = Depends(get_session), user = Depends(get_user)):
-    subscription = session.get(Subscription, id)
+@router.delete('/delete/{subscription_id}')
+def delete_subscription(subscription_id: int, session: Session = Depends(get_session), user = Depends(get_user)):
+    subscription = session.get(Subscription, subscription_id)
     
-    if not subscription or str(subscription.user_id) != user.id:
+    if not subscription or str(subscription.user_id) != str(user.id):
         raise HTTPException(status_code=404, detail="Subscription not found or unauthorized")
     
+    # Soft-delete: mark inactive so history is preserved in the database.
+    subscription.is_active = False
     try:
-        session.delete(subscription)
+        session.add(subscription)
         session.commit()
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=400, detail=f"Delete failed: {str(e)}")
         
-    return {"message": "Subscription deleted successfully"}
+    return {"message": "Subscription removed"}

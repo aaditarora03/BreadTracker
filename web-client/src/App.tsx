@@ -1,125 +1,282 @@
-/*
-Main App component 
-
-Resposnible for:
-- Managing the state of subscriptions
-- Handling tab switching (Dashboard / Subscriptions)
-- Persisting subscription data using localStorage
-
-Notes:
-- All subscription data is stored in localStorage right now until we integrate with a backend API
-
-~ Osbaldo Mota
-*/
-
-import { useState, useEffect } from "react"
-import Layout from "./components/layout/Layout"
-import Navbar from "./components/layout/Navbar"
-import Card from "./components/ui/Card"
-import SubscriptionList from "./components/subscriptions/SubscriptionList"
-import type { Subscription } from "./types/Subscription"
-import WeeklySpendingChart from "./components/dashboard/WeeklySpendingChart"
-import UpcomingCharges from "./components/dashboard/UpcomingCharges"
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./components/layout/Layout";
+import Navbar from "./components/layout/Navbar";
+import SubscriptionList from "./components/subscriptions/SubscriptionList";
+import type { Subscription } from "./types/Subscription";
+import Dashboard from "./screens/Dashboard";
+import Login from "./screens/Login";
+import Signup from "./screens/Signup";
+import ForgotPassword from "./screens/ForgotPassword";
+import { useAuth } from "./hooks/useAuth";
 import {
-  calculateMonthlyExpenses,
-  calculateActiveSubscriptions,
-  calculateUpcomingChargesTotal,
-} from "./types/utils/financialUtils"
-
+  createSubscription,
+  deleteSubscription,
+  getSubscriptions,
+  updateSubscription,
+  AuthError,
+} from "./api/client";
 
 export default function App() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-
-  // The actuive tab states which controls Dashboard vs Subscriptions view
-  const [activeTab, setActiveTab] = useState<"dashboard" | "subscriptions">("dashboard")
-  // Subsscription state
-  // Adds a new subscription to the list
-  const handleAdd = (newSubscription: Subscription) => {
-  setSubscriptions((prev) => [...prev, newSubscription])
-}
-
-  
-const [hasLoaded, setHasLoaded] = useState(false)
-
-// Load subscriptions from localStorage on app start
-useEffect(() => {
-  const saved = localStorage.getItem("subscriptions")
-  if (saved) {
-    try {
-      setSubscriptions(JSON.parse(saved))
-    } catch (error) {
-      console.error("Failed to parse subscriptions from localStorage", error)
+  const { auth, signOut } = useAuth();
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [budget, setBudget] = useState<number | null>(() => {
+    const savedBudget = localStorage.getItem("monthlyBudget");
+    if (savedBudget) {
+      const parsedBudget = Number(savedBudget);
+      if (!Number.isNaN(parsedBudget)) {
+        return parsedBudget;
+      }
     }
-  }
-  // Mark that loading is complete
-  setHasLoaded(true)
-}, [])
+    return null;
+  });
 
-// Save to localStorage ONLY after initial load is done
-useEffect(() => {
-  if (!hasLoaded) return
-  localStorage.setItem("subscriptions", JSON.stringify(subscriptions))
-}, [subscriptions, hasLoaded])
-// Deletes a subscription by id
-  const handleDelete = (id: number) => {
-    setSubscriptions((prev) => prev.filter((sub) => sub.id !== id))
-  }
+  const handleBudgetSave = (nextBudget: number) => {
+    setBudget(nextBudget);
+    localStorage.setItem("monthlyBudget", String(nextBudget));
+  };
 
-  // Dynamic dashboard metrics based on subscription data
-  const monthlyExpenses = calculateMonthlyExpenses(subscriptions)
-  const activeSubscriptions = calculateActiveSubscriptions(subscriptions)
-  const upcomingChargesTotal = calculateUpcomingChargesTotal(subscriptions)
+  useEffect(() => {
+    if (!auth) {
+      setSubscriptions([]);
+      return;
+    }
+
+    const loadSubscriptions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getSubscriptions(auth.token);
+        setSubscriptions(data);
+      } catch (requestError) {
+        if (requestError instanceof AuthError) {
+          void signOut();
+        } else {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Failed to load subscriptions",
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSubscriptions();
+  }, [auth, signOut]);
+
+  const handleAdd = async (
+    newSubscription: Omit<Subscription, "subscriptionId">,
+  ) => {
+    if (!auth) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const created = await createSubscription(auth.token, {
+        serviceName: newSubscription.serviceName,
+        cost: newSubscription.cost,
+        billingDate: newSubscription.billingDate,
+        recurrenceType: newSubscription.recurrenceType,
+        autoRenew: newSubscription.autoRenew,
+      });
+      setSubscriptions((prev) => [...prev, created]);
+    } catch (requestError) {
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to add subscription",
+        );
+      }
+    }
+  };
+
+  const handleDelete = async (subscriptionId: number) => {
+    if (!auth) {
+      return;
+    }
+
+    try {
+      setError(null);
+      await deleteSubscription(auth.token, subscriptionId);
+      setSubscriptions((prev) =>
+        prev.filter((sub) => sub.subscriptionId !== subscriptionId),
+      );
+    } catch (requestError) {
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to delete subscription",
+        );
+      }
+    }
+  };
+
+  const getNextBillingDate = (
+    recurrenceType: Subscription["recurrenceType"],
+  ) => {
+    const nextDate = new Date();
+
+    if (recurrenceType === "weekly") {
+      nextDate.setDate(nextDate.getDate() + 7);
+    } else if (recurrenceType === "yearly") {
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+    } else {
+      nextDate.setMonth(nextDate.getMonth() + 1);
+    }
+
+    return nextDate.toISOString().slice(0, 10);
+  };
+
+  const handleCancel = async (subscriptionId: number) => {
+    if (!auth) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const updated = await updateSubscription(auth.token, subscriptionId, {
+        autoRenew: false,
+      });
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.subscriptionId === subscriptionId ? updated : sub,
+        ),
+      );
+    } catch (requestError) {
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to cancel subscription",
+        );
+      }
+    }
+  };
+
+  const handleEnableAutoRenew = async (subscriptionId: number) => {
+    if (!auth) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const updated = await updateSubscription(auth.token, subscriptionId, {
+        autoRenew: true,
+      });
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.subscriptionId === subscriptionId ? updated : sub,
+        ),
+      );
+    } catch (requestError) {
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to enable auto renew",
+        );
+      }
+    }
+  };
+
+  const handleRenew = async (subscriptionId: number) => {
+    if (!auth) {
+      return;
+    }
+
+    const target = subscriptions.find(
+      (sub) => sub.subscriptionId === subscriptionId,
+    );
+    if (!target) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const updated = await updateSubscription(auth.token, subscriptionId, {
+        autoRenew: true,
+        billingDate: getNextBillingDate(target.recurrenceType),
+      });
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.subscriptionId === subscriptionId ? updated : sub,
+        ),
+      );
+    } catch (requestError) {
+      if (requestError instanceof AuthError) {
+        void signOut();
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to renew subscription",
+        );
+      }
+    }
+  };
+
+  if (!auth) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <>
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Navbar budget={budget} onSaveBudget={handleBudgetSave} />
 
       <Layout>
-        {activeTab === "dashboard" && (
-          <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Dashboard Overview
-              </h2>
-              <p className="text-gray-500 text-sm mt-1">
-                Here’s a summary of your financial activity.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
-            <Card
-             title="Monthly Subscription Cost"
-             value={`$${monthlyExpenses.toFixed(2)}`}
-              />
-
-            <Card
-              title="Active Subscriptions"
-              value={`${activeSubscriptions}`}
-            />
-
-            <Card
-              title="Upcoming Charges"
-              value={`$${upcomingChargesTotal.toFixed(2)}`}
-            />
-          </div>
-            
-            <div className="mt-10 grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-            <WeeklySpendingChart subscriptions={subscriptions} />
-            </div>
-
-          <UpcomingCharges subscriptions={subscriptions} />
-          </div>
-          </>
+        {error && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
         )}
 
-        {activeTab === "subscriptions" && (
-          <SubscriptionList
-            subscriptions={subscriptions}
-            onDelete={handleDelete}
-            onAdd={handleAdd}
+        {loading && <p className="mb-4 text-sm text-gray-500">Loading...</p>}
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Dashboard subscriptions={subscriptions} budget={budget} />
+            }
           />
-        )}
+          <Route
+            path="/subscriptions"
+            element={
+              <SubscriptionList
+                subscriptions={subscriptions}
+                onDelete={handleDelete}
+                onAdd={handleAdd}
+                onCancel={handleCancel}
+                onEnableAutoRenew={handleEnableAutoRenew}
+                onRenew={handleRenew}
+              />
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </Layout>
     </>
-  )
+  );
 }
