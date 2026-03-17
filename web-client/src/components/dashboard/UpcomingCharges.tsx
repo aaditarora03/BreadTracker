@@ -16,7 +16,7 @@ export default function UpcomingCharges({ subscriptions }: Props) {
     }))
     .filter(
       (item): item is { sub: Subscription; nextBillingDate: Date } =>
-        item.nextBillingDate !== null,
+        item.nextBillingDate !== null && item.sub.autoRenew,
     )
     .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
 
@@ -34,8 +34,9 @@ export default function UpcomingCharges({ subscriptions }: Props) {
         ) : (
           sorted.slice(0, 4).map(({ sub, nextBillingDate }) => {
             const daysLeft = getDaysLeftFromDate(nextBillingDate);
+            const dayText = daysLeft === 1 ? "day" : "days";
             const dueText =
-              daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} days`;
+              daysLeft <= 0 ? "Due today" : `Due in ${daysLeft} ${dayText}`;
 
             return (
               <div
